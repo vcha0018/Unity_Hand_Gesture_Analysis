@@ -10,10 +10,10 @@ public sealed class GestureProcessor
     private static readonly object objLock = new object();
 
     public static bool ReInitialize { get; set; }
-    
+
     private static GestureProcessor _gestureProcessor;
-    public static GestureProcessor Instance 
-    { 
+    public static GestureProcessor Instance
+    {
         get
         {
             lock (objLock)
@@ -26,6 +26,17 @@ public sealed class GestureProcessor
     }
 
     public List<Person> GestureCollection { get; private set; }
+
+    /// <summary>
+    /// Get total number of gestures in GestureCollection.
+    /// </summary>
+    public int TotalGestures
+    {
+        get
+        {
+            return GestureCollection.Sum(item => item.Gestures.Count);
+        }
+    }
     private GestureProcessor()
     {
         ReInitialize = false;

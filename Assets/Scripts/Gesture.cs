@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace DataStructure
 {
@@ -37,6 +38,26 @@ namespace DataStructure
                     _rightHandPoses = value;
                 else
                     throw new ArgumentException("HandPoses cannot be null or empty!");
+            }
+        }
+
+        public GameObject HandModel{ get; set; }
+
+        public string Tag { get; set; }
+
+        private Vector3 _positionFactor = new Vector3(0, 0, 0);
+        public Vector3 PositionFactor
+        {
+            get
+            {
+                return _positionFactor;
+            }
+            set
+            {
+                if (value != null)
+                    _positionFactor = value;
+                else
+                    throw new ArgumentException("Position Factor cannot be null.");
             }
         }
 
