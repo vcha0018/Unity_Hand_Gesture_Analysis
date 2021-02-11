@@ -33,3 +33,9 @@ public enum GestureTypeFormat : ushort
     Zoom = 12,
     SelectRange = 13,
 }
+
+public enum HandTypeFormat: ushort
+{
+    LEFT = 0,
+    RIGHT = 1
+}

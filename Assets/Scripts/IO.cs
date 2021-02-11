@@ -10,7 +10,7 @@ namespace DataStructure
 {
     public class IO
     {
-        public static List<Person> LoadGesturesPersonWise()
+        public static List<Person> LoadGesturesPersonWise(bool processBothHads = false)
         {
             List<Person> person_gestures = new List<Person>();
             foreach (string dir_path in Constants.GESTURE_DIR_PATHS)
@@ -35,34 +35,10 @@ namespace DataStructure
                                 FileInfo f1 = new FileInfo(files[j]);
                                 FileInfo f2 = new FileInfo(files[j + 1]);
                                 FileInfo f = (f1.Length > f2.Length) ? f1 : f2;
-                                string f1_gkey = f1.Name.Substring(f1.Name.IndexOf("_") + 1, f1.Name.IndexOf('#') - f1.Name.IndexOf("_") - 1);
-                                string f2_gkey = f2.Name.Substring(f2.Name.IndexOf("_") + 1, f2.Name.IndexOf('#') - f2.Name.IndexOf("_") - 1);
-                                if (f1_gkey == f2_gkey)
-                                {
-                                    string left_hand_text = string.Empty;
-                                    string right_hand_text = string.Empty;
-                                    if (f1.Name.Substring(f1.Name.IndexOf("#") + 1, f1.Name.LastIndexOf('#') - f1.Name.IndexOf("#") - 1)[0] == 'L')
-                                    {
-                                        left_hand_text = File.ReadAllText(f1.FullName);
-                                        right_hand_text = File.ReadAllText(f2.FullName);
-                                    }
-                                    else
-                                    {
-                                        right_hand_text = File.ReadAllText(f1.FullName);
-                                        left_hand_text = File.ReadAllText(f2.FullName);
-                                    }
-                                    GestureTypeFormat ges_key = (GestureTypeFormat)Enum.Parse(typeof(GestureTypeFormat), f1_gkey, true);
-                                    if (gestures.ContainsKey(ges_key))
-                                    {
-                                        gestures[ges_key].Add(ParseGestureFromString(left_hand_text, right_hand_text));
-                                    }
-                                    else
-                                        gestures.Add(ges_key, new List<Gesture>()
-                                    {
-                                        ParseGestureFromString(left_hand_text, right_hand_text)
-                                    });
-                                }
-
+                                if (!processBothHads)
+                                    AddSingleHand(ref gestures, ref f);
+                                else
+                                    AddBothHands(ref gestures, ref f1, ref f2);
                             }
                         }
                         currentPerson.Gestures = gestures;
@@ -73,12 +49,54 @@ namespace DataStructure
             return person_gestures;
         }
 
-        private static Gesture ParseGestureFromString(string left_hand_text, string right_hand_text)
+        private static void AddSingleHand(ref Dictionary<GestureTypeFormat, List<Gesture>> gestures, ref FileInfo fileInfo)
         {
-            Gesture temp_gesture = new Gesture();
-            temp_gesture.LeftHandPoses = ParseHandText(left_hand_text);
-            temp_gesture.RightHandPoses = ParseHandText(right_hand_text);
-            return temp_gesture;
+            string gkey = fileInfo.Name.Substring(fileInfo.Name.IndexOf("_") + 1, fileInfo.Name.IndexOf('#') - fileInfo.Name.IndexOf("_") - 1);
+            string htype = fileInfo.Name.Substring(fileInfo.Name.IndexOf("#") + 1, fileInfo.Name.LastIndexOf('#') - fileInfo.Name.IndexOf("#") - 1);
+            GestureTypeFormat ges_key = (GestureTypeFormat)Enum.Parse(typeof(GestureTypeFormat), gkey, true);
+            HandTypeFormat handtype = htype == "L" ? HandTypeFormat.LEFT : HandTypeFormat.RIGHT;
+            if (gestures.ContainsKey(ges_key))
+                gestures[ges_key].Add(new Gesture(handtype, ParseHandText(File.ReadAllText(fileInfo.FullName))));
+            else
+                gestures.Add(ges_key, new List<Gesture>()
+                {
+                    new Gesture(handtype, ParseHandText(File.ReadAllText(fileInfo.FullName)))
+                });
+        }
+
+        private static void AddBothHands(ref Dictionary<GestureTypeFormat, List<Gesture>> gestures, ref FileInfo f1, ref FileInfo f2)
+        {
+            string f1_gkey = f1.Name.Substring(f1.Name.IndexOf("_") + 1, f1.Name.IndexOf('#') - f1.Name.IndexOf("_") - 1);
+            string f2_gkey = f2.Name.Substring(f2.Name.IndexOf("_") + 1, f2.Name.IndexOf('#') - f2.Name.IndexOf("_") - 1);
+            if (f1_gkey == f2_gkey)
+            {
+                string left_hand_text = string.Empty;
+                string right_hand_text = string.Empty;
+                if (f1.Name.Substring(f1.Name.IndexOf("#") + 1, f1.Name.LastIndexOf('#') - f1.Name.IndexOf("#") - 1)[0] == 'L')
+                {
+                    left_hand_text = File.ReadAllText(f1.FullName);
+                    right_hand_text = File.ReadAllText(f2.FullName);
+                }
+                else
+                {
+                    right_hand_text = File.ReadAllText(f1.FullName);
+                    left_hand_text = File.ReadAllText(f2.FullName);
+                }
+                GestureTypeFormat ges_key = (GestureTypeFormat)Enum.Parse(typeof(GestureTypeFormat), f1_gkey, true);
+                if (gestures.ContainsKey(ges_key))
+                {
+                    gestures[ges_key].Add(new Gesture(HandTypeFormat.LEFT, ParseHandText(left_hand_text)));
+                    gestures[ges_key].Add(new Gesture(HandTypeFormat.RIGHT, ParseHandText(right_hand_text)));
+                }
+                else
+                {
+                    gestures.Add(ges_key, new List<Gesture>()
+                    {
+                        new Gesture(HandTypeFormat.LEFT, ParseHandText(left_hand_text)),
+                        new Gesture(HandTypeFormat.RIGHT, ParseHandText(right_hand_text))
+                    }); 
+                }
+            }
         }
 
         private static List<HandPose> ParseHandText(string text)

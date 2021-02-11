@@ -34,7 +34,7 @@ public sealed class GestureProcessor
     {
         get
         {
-            return GestureCollection.Sum(item => item.Gestures.Count);
+            return GestureCollection.Sum(pitem => pitem.Gestures.Sum(gItem => gItem.Value.Count));
         }
     }
     private GestureProcessor()
