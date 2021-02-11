@@ -9,10 +9,10 @@ public static class Constants
     public static int NUM_JOINTS = 21;
     public static List<string> GESTURE_DIR_PATHS = new List<string>()
     {
-        @"results\mediapipe\vivek-zoom\",
-        @"results\mediapipe\vivek-pan\",
-        @"results\mediapipe\vivek-rotate\",
-        @"results\mediapipe\vivek-highlight\"
+        @"results\mediapipe\vivek1\",
+        @"results\mediapipe\vivek2\",
+        @"results\mediapipe\vivek3\",
+        @"results\mediapipe\vivek4\"
     };
 }
 
@@ -38,4 +38,10 @@ public enum HandTypeFormat: ushort
 {
     LEFT = 0,
     RIGHT = 1
+}
+
+public enum ComparisionTypeFormat: ushort
+{
+    PersonWise = 1,
+    GestureWise = 2
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Analysis;
 
 public sealed class GestureProcessor
 {
@@ -41,5 +42,16 @@ public sealed class GestureProcessor
     {
         ReInitialize = false;
         GestureCollection = IO.LoadGesturesPersonWise();
+    }
+
+    public KeyValuePair<double, double> GetConsensusByGestureType(GestureTypeFormat gestureType, double customTolerance = -1)
+    {
+        Analyzer.aggregatorFunction = Analyzer.AverageAggregator;
+        Analyzer.dissimilarityFunction = DissimilarityFunctions.NormalizedDTW;
+        Analyzer.normalizationFactor = Constants.NUM_JOINTS;
+        return Analyzer.GetConsensus(
+            ComparisionTypeFormat.GestureWise, 
+            gestureType, 
+            tolerance:(customTolerance > -1) ? customTolerance : -1).Values.ElementAt(0).ElementAt(0);
     }
 }

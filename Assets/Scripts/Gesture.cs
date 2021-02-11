@@ -243,7 +243,7 @@ namespace DataStructure
             else
                 _timer += Time.deltaTime;
 
-            if (_csv_previous_timestamp < _csv_current_timestamp)
+            if (_jointTransforms != null && _jointTransforms.Length > 2 && _csv_previous_timestamp < _csv_current_timestamp)
             {
                 for (int i = 1; i < _jointTransforms.Length; i++)
                 {

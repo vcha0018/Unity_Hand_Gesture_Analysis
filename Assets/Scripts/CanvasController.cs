@@ -3,19 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using DataStructure;
+using TMPro;
 
 public class CanvasController : MonoBehaviour
 {
     private System.Random _random = new System.Random();
-
     private List<Vector3> positionFactores = new List<Vector3>();
-
     private float boundingLength = float.NaN;
-
     private float rescaleFactor = float.NaN;
-
     private float rescaleReference = 300;
-
     private bool isInitialized = false;
 
     private void Awake()
@@ -35,6 +31,8 @@ public class CanvasController : MonoBehaviour
 
     private void BuildPositioVectores(int gestureCount)
     {
+        if (gestureCount < 1)
+            throw new System.ArgumentException("Looks like there are no gestures in the pool.");
         boundingLength = float.Parse(System.Math.Sqrt(Screen.width * Screen.height / gestureCount).ToString());
         //CHECK 0: Ceiling function to fit all
         int row = System.Convert.ToInt32(System.Math.Ceiling(Screen.width / boundingLength));
@@ -173,5 +171,25 @@ public class CanvasController : MonoBehaviour
                     else
                         gesture.HandModel.SetActive(!visibility);
                 }
+    }
+
+    public void Analyse()
+    {
+        TMP_InputField inputGestureTypeTBox = GameObject.Find("InputGestureType").GetComponent<TMP_InputField>();
+        TMP_InputField inputToleranceTBox = GameObject.Find("InputTolerance").GetComponent<TMP_InputField>();
+        TMP_Text resultStatusLabel = GameObject.Find("ResultStatus").GetComponent<TMP_Text>();
+        
+        GestureTypeFormat gType = GestureTypeFormat.None;
+        if (System.Enum.TryParse(inputGestureTypeTBox.text.Trim().ToLower(), ignoreCase: true, out gType) && gType != GestureTypeFormat.None)
+        {
+            double inputToleranceValue = -1;
+            double.TryParse(inputToleranceTBox.text.Trim(), out inputToleranceValue);
+            KeyValuePair<double, double> toleranceConsensusPair = GestureProcessor.Instance.GetConsensusByGestureType(
+                gType,
+                double.TryParse(inputToleranceTBox.text.Trim(), out inputToleranceValue) ? inputToleranceValue : -1);
+            resultStatusLabel.text = string.Format("Tolerance: {0} | Consesnsus: {1}%", toleranceConsensusPair.Key, toleranceConsensusPair.Value);
+        }
+        else
+            Debug.LogError("Invalid Gesture Type entered!");
     }
 }

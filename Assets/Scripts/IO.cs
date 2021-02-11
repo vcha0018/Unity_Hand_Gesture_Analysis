@@ -35,10 +35,11 @@ namespace DataStructure
                                 FileInfo f1 = new FileInfo(files[j]);
                                 FileInfo f2 = new FileInfo(files[j + 1]);
                                 FileInfo f = (f1.Length > f2.Length) ? f1 : f2;
+                                GestureTypeFormat addedGestureType = GestureTypeFormat.None;
                                 if (!processBothHads)
-                                    AddSingleHand(ref gestures, ref f);
+                                    addedGestureType = AddSingleHand(ref gestures, ref f);
                                 else
-                                    AddBothHands(ref gestures, ref f1, ref f2);
+                                    addedGestureType = AddBothHands(ref gestures, ref f1, ref f2);
                             }
                         }
                         currentPerson.Gestures = gestures;
@@ -49,12 +50,12 @@ namespace DataStructure
             return person_gestures;
         }
 
-        private static void AddSingleHand(ref Dictionary<GestureTypeFormat, List<Gesture>> gestures, ref FileInfo fileInfo)
+        private static GestureTypeFormat AddSingleHand(ref Dictionary<GestureTypeFormat, List<Gesture>> gestures, ref FileInfo fileInfo)
         {
             string gkey = fileInfo.Name.Substring(fileInfo.Name.IndexOf("_") + 1, fileInfo.Name.IndexOf('#') - fileInfo.Name.IndexOf("_") - 1);
             string htype = fileInfo.Name.Substring(fileInfo.Name.IndexOf("#") + 1, fileInfo.Name.LastIndexOf('#') - fileInfo.Name.IndexOf("#") - 1);
             GestureTypeFormat ges_key = (GestureTypeFormat)Enum.Parse(typeof(GestureTypeFormat), gkey, true);
-            HandTypeFormat handtype = htype == "L" ? HandTypeFormat.LEFT : HandTypeFormat.RIGHT;
+            HandTypeFormat handtype = htype.ToUpper()[0] == 'L' ? HandTypeFormat.LEFT : HandTypeFormat.RIGHT;
             if (gestures.ContainsKey(ges_key))
                 gestures[ges_key].Add(new Gesture(handtype, ParseHandText(File.ReadAllText(fileInfo.FullName))));
             else
@@ -62,9 +63,10 @@ namespace DataStructure
                 {
                     new Gesture(handtype, ParseHandText(File.ReadAllText(fileInfo.FullName)))
                 });
+            return ges_key;
         }
 
-        private static void AddBothHands(ref Dictionary<GestureTypeFormat, List<Gesture>> gestures, ref FileInfo f1, ref FileInfo f2)
+        private static GestureTypeFormat AddBothHands(ref Dictionary<GestureTypeFormat, List<Gesture>> gestures, ref FileInfo f1, ref FileInfo f2)
         {
             string f1_gkey = f1.Name.Substring(f1.Name.IndexOf("_") + 1, f1.Name.IndexOf('#') - f1.Name.IndexOf("_") - 1);
             string f2_gkey = f2.Name.Substring(f2.Name.IndexOf("_") + 1, f2.Name.IndexOf('#') - f2.Name.IndexOf("_") - 1);
@@ -94,9 +96,12 @@ namespace DataStructure
                     {
                         new Gesture(HandTypeFormat.LEFT, ParseHandText(left_hand_text)),
                         new Gesture(HandTypeFormat.RIGHT, ParseHandText(right_hand_text))
-                    }); 
+                    });
                 }
+                return ges_key;
             }
+            else
+                throw new Exception("Mismatch information found on gesture type while reading.");
         }
 
         private static List<HandPose> ParseHandText(string text)
@@ -111,6 +116,8 @@ namespace DataStructure
                 HandPose handPose = new HandPose();
                 handPose.TimeStamp = int.Parse(points[0]);
                 points.RemoveAt(0);
+                if (points.Count != 63)
+                    continue;
                 List<Vector3> joints = new List<Vector3>();
                 for (int i = 0; i < points.Count; i += 3)
                 {
