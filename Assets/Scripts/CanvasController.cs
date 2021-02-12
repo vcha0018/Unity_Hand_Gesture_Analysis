@@ -13,6 +13,7 @@ public class CanvasController : MonoBehaviour
     private float rescaleFactor = float.NaN;
     private float rescaleReference = 300;
     private bool isInitialized = false;
+    private GameObject gestureNameObject;
 
     private void Awake()
     {
@@ -27,6 +28,7 @@ public class CanvasController : MonoBehaviour
     void Start()
     {
         ChangeVisibilityOfGestures(true);
+        gestureNameObject = GameObject.Find("GestureName");
     }
 
     private void BuildPositioVectores(int gestureCount)
@@ -76,6 +78,8 @@ public class CanvasController : MonoBehaviour
                     gesture.HandModel.SetActive(false);
                     gesture.Tag = gestureItem.Key.ToString();
                     gesture.PositionFactor = positionFactores[gesture_index++];
+                    foreach (HandJointController childController in gesture.HandModel.GetComponentsInChildren<HandJointController>())
+                        childController.gestureName = string.Format("{0} | {1} | {2}", person.Name, gesture.HandType.ToString(), gestureItem.Key.ToString());
 
                     // Assign TagDisplayer's gesture refrence to this gesture class.
                     // Prepair data....
@@ -91,7 +95,8 @@ public class CanvasController : MonoBehaviour
     {
         if (parentObject == null)
             throw new System.ArgumentException("Empty Parent Handmodel!");
-        GameObject handModel = new GameObject(string.Format("HandModel_{0}", _random.Next(0, 9999).ToString("D4")));
+        GameObject handModel = Instantiate(GameObject.Find("HandModelTemplate")); //new GameObject(string.Format("HandModel_{0}", _random.Next(0, 9999).ToString("D4")));
+        handModel.name = string.Format("HandModel_{0}", _random.Next(0, 9999).ToString("D4"));
         handModel.transform.SetParent(parentObject.transform);
 
         if (handJointTemplate != null)

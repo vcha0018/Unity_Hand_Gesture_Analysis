@@ -71,6 +71,8 @@
     <Compile Include="Assets\Scripts\DissimilarityFunctions.cs" />
     <Compile Include="Assets\Scripts\Gesture.cs" />
     <Compile Include="Assets\Scripts\GestureProcessor.cs" />
+    <Compile Include="Assets\Scripts\HandJointController.cs" />
+    <Compile Include="Assets\Scripts\HandModelController.cs" />
     <Compile Include="Assets\Scripts\HandPose.cs" />
     <Compile Include="Assets\Scripts\IO.cs" />
     <Compile Include="Assets\Scripts\Person.cs" />
