@@ -85,6 +85,16 @@ namespace DataStructure
             _handPoses = handPoses;
         }
 
+        public Gesture GetClone()
+        {
+            return new Gesture()
+            {
+                HandType = HandType,
+                HandPoses = (from item in _handPoses select item.GetClone()).ToList()
+            };
+        }
+
+        #region Leon Code
         private void SetBoundingBox()
         {
             _boundingBox = new BoundingBox();
@@ -177,7 +187,16 @@ namespace DataStructure
         /// </summary>
         public Vector3 GetBoundingBoxSize()
         {
-            return new Vector3(_boundingBox.maxX - _boundingBox.minX, _boundingBox.maxY - _boundingBox.minY, _boundingBox.maxZ - _boundingBox.minZ);
+            return new Vector3(
+                _boundingBox.maxX - _boundingBox.minX,
+                _boundingBox.maxY - _boundingBox.minY,
+                _boundingBox.maxZ - _boundingBox.minZ
+                );
+            Cuboid gestureCuboid = GetBoundingCuboid();
+            return new Vector3(
+                gestureCuboid.TopLeft.x - gestureCuboid.BottomRight.x,
+                gestureCuboid.TopLeft.y - gestureCuboid.BottomRight.y,
+                gestureCuboid.TopLeft.z - gestureCuboid.BottomRight.z);
         }
 
         public bool NormalizeGesture()
@@ -188,6 +207,8 @@ namespace DataStructure
             Rescale();
             return false;
         }
+        #endregion
+
 
         public void TransformJoints()
         {
@@ -198,9 +219,11 @@ namespace DataStructure
             _currentHandPoseIndex++;
             _jointTransforms = HandModel.GetComponentsInChildren<Transform>();
             _jointTransforms[0].localPosition = new Vector3(0, 0, 0);
-            for (int i = 1; i < _jointTransforms.Length; i++)
+            _jointTransforms[1].localPosition = new Vector3(_positionFactor.x, _positionFactor.y, _positionFactor.z - 50);
+            _jointTransforms[1].localScale = new Vector3(300 - 50, 300 - 50, 0);
+            for (int i = 2; i < _jointTransforms.Length; i++)
             {
-                _jointTransforms[i].localPosition = HandPoses[0].Joints[i - 1] + _positionFactor;
+                _jointTransforms[i].localPosition = HandPoses[0].Joints[i - 2] + _positionFactor;
             }
         }
 
@@ -245,16 +268,184 @@ namespace DataStructure
 
             if (_jointTransforms != null && _jointTransforms.Length > 2 && _csv_previous_timestamp < _csv_current_timestamp)
             {
-                for (int i = 1; i < _jointTransforms.Length; i++)
+                for (int i = 2; i < _jointTransforms.Length; i++)
                 {
-                    Vector3 start_pos = _jointTransforms[i].localPosition;
-                    Vector3 end_pos = HandPoses[_currentHandPoseIndex].Joints[i - 1] + _positionFactor;
+                    try
+                    {
+                        Vector3 start_pos = _jointTransforms[i].localPosition;
+                        Vector3 end_pos = HandPoses[_currentHandPoseIndex].Joints[i - 2] + _positionFactor;
 
-                    float ratio = ((_timer * 1000) - _csv_previous_timestamp) / (_csv_current_timestamp - _csv_previous_timestamp);
-                    _jointTransforms[i].localPosition = Vector3.Lerp(start_pos, end_pos, ratio);
+                        float ratio = ((_timer * 1000) - _csv_previous_timestamp) / (_csv_current_timestamp - _csv_previous_timestamp);
+                        _jointTransforms[i].localPosition = Vector3.Lerp(start_pos, end_pos, ratio);
+                    }
+                    catch (Exception e)
+                    {
+                        throw;
+                    }
                 }
             }
         }
+
+        #region Properties: bounding cuboid, production time, centroid posture, and centroid point
+
+        /// <summary>
+        /// Returns the bounding cuboid of this gesture.
+        /// </summary>
+        public Cuboid GetBoundingCuboid()
+        {
+            Cuboid cuboid = new Cuboid()
+            {
+                TopLeft = new Vector3() { x = float.MaxValue, y = float.MaxValue, z = float.MaxValue },
+                BottomRight = new Vector3() { x = float.MinValue, y = float.MinValue, z = float.MinValue }
+            };
+
+            foreach (HandPose pose in _handPoses)
+            {
+                Cuboid cuboidPosture = pose.GetBoundingCuboid();
+
+                cuboid.TopLeft.x = Math.Min(cuboid.TopLeft.x, cuboidPosture.TopLeft.x);
+                cuboid.TopLeft.y = Math.Min(cuboid.TopLeft.y, cuboidPosture.TopLeft.y);
+                cuboid.TopLeft.z = Math.Min(cuboid.TopLeft.z, cuboidPosture.TopLeft.z);
+
+                cuboid.BottomRight.x = Math.Max(cuboid.BottomRight.x, cuboidPosture.BottomRight.x);
+                cuboid.BottomRight.y = Math.Max(cuboid.BottomRight.y, cuboidPosture.BottomRight.y);
+                cuboid.BottomRight.z = Math.Max(cuboid.BottomRight.z, cuboidPosture.BottomRight.z);
+            }
+
+            return cuboid;
+        }
+
+        /// <summary>
+        /// Returns the time duration of this gesture.
+        /// </summary>
+        public float GetProductionTimeInMilliseconds()
+        {
+            return (_handPoses.Count == 0) ? 0 : _handPoses[_handPoses.Count - 1].TimeStamp - _handPoses[0].TimeStamp;
+        }
+
+        /// <summary>
+        /// Returns the centroid point of this gesture.
+        /// </summary>
+        public Vector3 GetCentroidPoint()
+        {
+            return GetCentroidHandPose().GetCentroid();
+        }
+
+        /// <summary>
+        /// Returns the centroid hand pose of this gesture.
+        /// </summary>
+        /// <returns></returns>
+        public HandPose GetCentroidHandPose()
+        {
+            HandPose centroid = new HandPose();
+
+            if (_handPoses.Count > 0)
+            {
+                for (int i = 0; i < _handPoses[0].Joints.Length; i++)
+                    centroid.Joints[i] = new Vector3(0, 0, 0);
+
+                foreach (HandPose pose in _handPoses)
+                {
+                    for (int i = 0; i < pose.Joints.Length; i++)
+                    {
+                        centroid.Joints[i].x += pose.Joints[i].x;
+                        centroid.Joints[i].y += pose.Joints[i].y;
+                        centroid.Joints[i].z += pose.Joints[i].z;
+                    }
+                    centroid.TimeStamp += pose.TimeStamp;
+                }
+
+                for (int i = 0; i < centroid.Joints.Length; i++)
+                {
+                    centroid.Joints[i].x /= _handPoses.Count;
+                    centroid.Joints[i].y /= _handPoses.Count;
+                    centroid.Joints[i].z /= _handPoses.Count;
+                }
+                centroid.TimeStamp /= _handPoses.Count;
+            }
+
+            return centroid;
+        }
+
+        #endregion
+
+        #region Operations: resample, translate to origin, normalize height
+
+        /// <summary>
+        /// Resamples a whole-hand gesture into a fixed number of n hand poses uniformly spaced in time.
+        /// </summary>
+        public void Resample(int n)
+        {
+            if (this._handPoses.Count == 0)
+                return;
+
+            List<HandPose> set = new List<HandPose>();
+            float I = GetProductionTimeInMilliseconds() / (n - 1);
+
+            set.Add(_handPoses[0]);
+            for (int i = 1; i < _handPoses.Count; i++)
+            {
+                float timeDiff = _handPoses[i].TimeStamp - set[set.Count - 1].TimeStamp;
+                while (timeDiff >= I)
+                {
+                    // interpolate two hand postures
+                    float t = I / timeDiff;
+                    HandPose posture = new HandPose();
+                    for (int j = 0; j < _handPoses[i].Joints.Length; j++)
+                        posture.Joints[j] = (new Vector3()
+                        {
+                            x = (1 - t) * set[set.Count - 1].Joints[j].x + t * _handPoses[i].Joints[j].x,
+                            y = (1 - t) * set[set.Count - 1].Joints[j].y + t * _handPoses[i].Joints[j].y,
+                            z = (1 - t) * set[set.Count - 1].Joints[j].z + t * _handPoses[i].Joints[j].z
+                        });
+                    posture.TimeStamp = (1 - t) * set[set.Count - 1].TimeStamp + t * _handPoses[i].TimeStamp;
+                    set.Add(posture);
+                    timeDiff -= I;
+                }
+            }
+            if (set.Count == n - 1)
+                set.Add(_handPoses[_handPoses.Count - 1]);
+
+            this._handPoses = set;
+        }
+
+        /// <summary>
+        /// Translates the gesture so that its centroid becomes (0, 0, 0).
+        /// </summary>
+        public void TranslateToOrigin2()
+        {
+            Vector3 centroid = this.GetCentroidPoint();
+            foreach (HandPose pose in _handPoses)
+                for (int i = 0; i < pose.Joints.Length; i++)
+                {
+                    pose.Joints[i].x -= centroid.x;
+                    pose.Joints[i].y -= centroid.y;
+                    pose.Joints[i].z -= centroid.z;
+                }
+        }
+
+        /// <summary>
+        /// Normalizes the height of the hand to 1.0 meters using the
+        /// first hand pose as a reference (assumes the first hand pose is the standing pose).
+        /// </summary>
+        public void NormalizeHeight()
+        {
+            if (_handPoses.Count == 0) return;
+
+            float scale = 1.0f / _handPoses[0].GetBoundingCuboid().Height;
+            foreach (HandPose pose in _handPoses)
+            {
+                Cuboid cuboid = pose.GetBoundingCuboid();
+                for (int i = 0; i < pose.Joints.Length; i++)
+                {
+                    pose.Joints[i].x = (pose.Joints[i].x - cuboid.TopLeft.x) * scale + cuboid.TopLeft.x;
+                    pose.Joints[i].y = (pose.Joints[i].y - cuboid.TopLeft.y) * scale + cuboid.TopLeft.y;
+                    pose.Joints[i].z = (pose.Joints[i].z - cuboid.TopLeft.z) * scale + cuboid.TopLeft.z;
+                }
+            }
+        }
+
+        #endregion
     }
 
     //public class Gesture

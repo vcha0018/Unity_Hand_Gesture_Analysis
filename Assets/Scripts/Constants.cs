@@ -14,6 +14,7 @@ public static class Constants
         @"results\mediapipe\vivek3\",
         @"results\mediapipe\vivek4\"
     };
+    public static int DEFAULT_FRAME_RATE = 25;
 }
 
 public enum GestureTypeFormat : ushort
@@ -40,8 +41,17 @@ public enum HandTypeFormat: ushort
     RIGHT = 1
 }
 
-public enum ComparisionTypeFormat: ushort
+public enum DissimilarityFunctionType: ushort
 {
-    PersonWise = 1,
-    GestureWise = 2
+    EuclideanDistance = 1,
+    DTW = 2,
+    NormalizedDTW = 3,
+    ModifiedHausdorff = 4
+}
+
+public enum AggregationType: ushort
+{
+    Average = 1,
+    Max = 2,
+    Min = 3
 }

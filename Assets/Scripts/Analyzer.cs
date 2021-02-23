@@ -48,65 +48,152 @@ namespace Analysis
             return consensus;
         }
 
-        private static Dictionary<double, double> GetToleranceConsensusPair(
+        private static List<Tuple<double, double>> GetToleranceConsensusPair(
             int toleranceDataPoints,
             double[,] dissimilarityMatric,
             double defaultTolerance = -1)
         {
-            if (toleranceDataPoints < 0)
+            if (defaultTolerance <= 1.0)
             {
-                defaultTolerance = (defaultTolerance < 0) ? dissimilarityMatric.Cast<double>().Max() * 1.01 : defaultTolerance;
-                return new Dictionary<double, double>()
-                    { { defaultTolerance, Consensus(dissimilarityMatric, defaultTolerance) } };
+                if (toleranceDataPoints < 0)
+                {
+                    defaultTolerance = (defaultTolerance == 1) ? dissimilarityMatric.Cast<double>().Max() * 1.01 : defaultTolerance;
+                    return new List<Tuple<double, double>>()
+                    {
+                        new Tuple<double, double>(defaultTolerance, Consensus(dissimilarityMatric, defaultTolerance))
+                    };
+                }
+                else
+                {
+                    double maxT = dissimilarityMatric.Cast<double>().Max();
+                    double step = maxT / (toleranceDataPoints - 1);
+                    List<Tuple<double, double>> tcPair = new List<Tuple<double, double>>();
+                    for (double t = 0; t < maxT; t += step)
+                        tcPair.Add(new Tuple<double, double>(t, Consensus(dissimilarityMatric, t)));
+                    tcPair.Add(new Tuple<double, double>(maxT * 1.01, Consensus(dissimilarityMatric, maxT * 1.01)));
+                    return tcPair;
+                }
             }
-            else
-            {
-                double maxT = dissimilarityMatric.Cast<double>().Max();
-                double step = maxT / (toleranceDataPoints - 1);
-                Dictionary<double, double> tcPair = new Dictionary<double, double>();
-                for (double t = 0; t < maxT; t += step)
-                    tcPair.Add(t, Consensus(dissimilarityMatric, t));
-                tcPair.Add(maxT * 1.01, Consensus(dissimilarityMatric, maxT * 1.01));
-                return tcPair;
-            }
+            throw new Exception("Custom tolerance value is not in range (0 to 1).");
         }
 
-        internal static Dictionary<GestureTypeFormat, Dictionary<double, double>> GetConsensus(
-            ComparisionTypeFormat comparisionType,
+        internal static Dictionary<GestureTypeFormat, ComparisionResult> GetConsensusBetweenPersons(
+            ref List<Person> persons,
             GestureTypeFormat gestureType = GestureTypeFormat.None,
             HandTypeFormat handType = HandTypeFormat.LEFT,
             int toleranceDataPoints = -1,
             double tolerance = -1)
         {
-            Dictionary<GestureTypeFormat, Dictionary<double, double>> consensusCollection = new Dictionary<GestureTypeFormat, Dictionary<double, double>>();
-            double[,] dissimilarityMatric;
-            switch (comparisionType)
+            Dictionary<GestureTypeFormat, ComparisionResult> result = new Dictionary<GestureTypeFormat, ComparisionResult>();
+            // list of all gesture types
+            List<GestureTypeFormat> GESTURE_TYPES = (gestureType != GestureTypeFormat.None)
+                ? new List<GestureTypeFormat>() { gestureType }
+                : persons.
+                    Select(pItem =>
+                        pItem.Gestures.
+                            Select(gItem => gItem.Key).
+                            Distinct()).
+                    SelectMany(x => x).
+                    Distinct().
+                    ToList();
+            foreach (GestureTypeFormat gType in GESTURE_TYPES)
             {
-                case ComparisionTypeFormat.PersonWise:
-                    // list of all gesture types
-                    List<GestureTypeFormat> GESTURE_TYPES = GestureProcessor.Instance.
-                        GestureCollection.
-                            Select(pItem =>
-                                pItem.Gestures.
-                                    Select(gItem => gItem.Key).
-                                    Distinct()).
-                            SelectMany(x => x).
-                            Distinct().
-                            ToList();
-                    foreach (GestureTypeFormat gType in GESTURE_TYPES)
+                double[,] disMatric = GetDissimilarityMatric(persons, gType, handType);
+                result.Add(
+                    gType,
+                    new ComparisionResult()
                     {
-                        dissimilarityMatric = GetDissimilarityMatric(GestureProcessor.Instance.GestureCollection, gType, handType);
-                        consensusCollection.Add(gType, GetToleranceConsensusPair(toleranceDataPoints, dissimilarityMatric, tolerance));
-                    }
-                    break;
-                case ComparisionTypeFormat.GestureWise:
-                    if (gestureType == GestureTypeFormat.None)
-                        throw new ArgumentException("To get consensus, gesture type cannot be 'None' type.");
-                    dissimilarityMatric = GetDissimilarityMatric(GestureProcessor.Instance.GestureCollection, gestureType, handType);
-                    consensusCollection.Add(gestureType, GetToleranceConsensusPair(toleranceDataPoints, dissimilarityMatric, tolerance));
-                    break;
+                        dissimilarityMatric = disMatric,
+                        toleranceConsensusPair = GetToleranceConsensusPair(toleranceDataPoints, disMatric, tolerance)
+                    });
             }
-            return consensusCollection;
+            //switch (comparisionType)
+            //{
+            //    case ComparisionTypeFormat.PersonWise:
+            //        // list of all gesture types
+            //        List<GestureTypeFormat> GESTURE_TYPES = (gestureType != GestureTypeFormat.None) 
+            //            ? new List<GestureTypeFormat>() { gestureType } 
+            //            : gestureCollection.
+            //                Select(pItem =>
+            //                    pItem.Gestures.
+            //                        Select(gItem => gItem.Key).
+            //                        Distinct()).
+            //                SelectMany(x => x).
+            //                Distinct().
+            //                ToList();
+            //        foreach (GestureTypeFormat gType in GESTURE_TYPES)
+            //        {
+            //            disMatric = GetDissimilarityMatric(gestureCollection, gType, handType);
+            //            result.Add(
+            //                gType,
+            //                new ComparisionResult()
+            //                {
+            //                     dissimilarityMatric = disMatric,
+            //                     toleranceConsensusPair = GetToleranceConsensusPair(toleranceDataPoints, disMatric, tolerance)
+            //                });
+            //        }
+            //        break;
+            //    case ComparisionTypeFormat.GestureWise:
+            //        //if (gestureType == GestureTypeFormat.None)
+            //        //    throw new ArgumentException("To get consensus, gesture type cannot be 'None' type.");
+            //        //disMatric = GetDissimilarityMatric(gestureCollection, gestureType, handType);
+            //        //result.Add(
+            //        //    gestureType,
+            //        //    new ComparisionResult()
+            //        //    {
+            //        //        dissimilarityMatric = disMatric,
+            //        //        toleranceConsensusPair = GetToleranceConsensusPair(toleranceDataPoints, disMatric, tolerance)
+            //        //    });
+            //        break;
+            //}
+            return result;
+        }
+
+        internal static Dictionary<GestureTypeFormat, ComparisionResult> GetConsensusBetweenGestures(
+            Person person,
+            GestureTypeFormat gestureType = GestureTypeFormat.None,
+            HandTypeFormat handType = HandTypeFormat.LEFT,
+            int toleranceDataPoints = -1,
+            double tolerance = -1)
+        {
+            int counter = 0;
+            List<Person> persons = (from item in person.Gestures
+                                    select (from gesture in item.Value
+                                            select new Person()
+                                            {
+                                                Name = string.Format("{0}_{1}", person.Name, counter++),
+                                                Gestures = new Dictionary<GestureTypeFormat, List<Gesture>>()
+                                                {
+                                                    {
+                                                        item.Key, 
+                                                        new List<Gesture>() 
+                                                        {
+                                                            gesture 
+                                                        } 
+                                                    }
+                                                }
+                                            }).ToList()).SelectMany(item => item).ToList();
+            return GetConsensusBetweenPersons(ref persons, gestureType, handType, toleranceDataPoints, tolerance);
+            //Dictionary<GestureTypeFormat, ComparisionResult> result = new Dictionary<GestureTypeFormat, ComparisionResult>();
+            //// list of all gesture types
+            //List<GestureTypeFormat> GESTURE_TYPES = (gestureType != GestureTypeFormat.None)
+            //    ? new List<GestureTypeFormat>() { gestureType }
+            //    : person.Gestures.
+            //        Select(gItem => gItem.Key).
+            //        Distinct().
+            //        ToList();
+            //foreach (GestureTypeFormat gType in GESTURE_TYPES)
+            //{
+            //    double[,] disMatric;
+                
+            //    result.Add(
+            //        gType,
+            //        new ComparisionResult()
+            //        {
+            //            dissimilarityMatric = disMatric,
+            //            toleranceConsensusPair = GetToleranceConsensusPair(toleranceDataPoints, disMatric, tolerance)
+            //        });
+            //}
         }
 
         internal static double[,] GetDissimilarityMatric(List<Person> persons, GestureTypeFormat gestureType, HandTypeFormat handType)

@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Linq;
 using DataStructure;
 using TMPro;
+using System;
 
 public class CanvasController : MonoBehaviour
 {
@@ -13,10 +14,22 @@ public class CanvasController : MonoBehaviour
     private float rescaleFactor = float.NaN;
     private float rescaleReference = 300;
     private bool isInitialized = false;
-    private GameObject gestureNameObject;
+
+    UnityEngine.UI.Toggle toleranceSwitch;
+    UnityEngine.UI.Slider toleranceSlider;
+    TMP_InputField toleranceInput;
+    TMP_Dropdown gestureTypeDDL;
+    TMP_Dropdown handTypeDDL;
+    TMP_Text resultTolerance;
+    TMP_Text resultConsensus;
+    GameObject outputPanel;
+    GameObject gridRow;
+    GameObject gridCell;
+    ComparisionResult fromResult;
 
     private void Awake()
     {
+        InitializeUIElements();
         GameObject handJoint = GameObject.Find("HandJoint");
         BuildPositioVectores(GestureProcessor.Instance.TotalGestures);
         AssignHandModelsToGestures(handJoint);
@@ -27,8 +40,90 @@ public class CanvasController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        ChangeVisibilityOfGestures(true);
-        gestureNameObject = GameObject.Find("GestureName");
+        string gtype = GetCurrentGesture();
+        ChangeVisibilityOfGestures(
+            true,
+            GetCurrentHandType(),
+            gtype.ToLower() != "all" ? gtype : "");
+    }
+
+    private void InitializeUIElements()
+    {
+        toleranceSwitch = GameObject.Find("ToleranceSwitch").GetComponent<UnityEngine.UI.Toggle>();
+        toleranceSlider = GameObject.Find("ToleranceSlider").GetComponent<UnityEngine.UI.Slider>();
+        toleranceInput = GameObject.Find("ToleranceInput").GetComponent<TMP_InputField>();
+        gestureTypeDDL = GameObject.Find("GestureTypeDDL").GetComponent<TMP_Dropdown>();
+        handTypeDDL = GameObject.Find("HandTypeDDL").GetComponent<TMP_Dropdown>();
+
+        toleranceInput.enabled = toleranceSwitch.isOn = false;
+        toleranceSwitch.onValueChanged.AddListener(delegate { OnToleranceSwitchValueChanged(toleranceSwitch); });
+
+        toleranceSlider.minValue = 0;
+        toleranceSlider.maxValue = 100;
+        toleranceSlider.value = 0;
+        toleranceSlider.wholeNumbers = true;
+        toleranceInput.text = "0.00";
+        toleranceSlider.onValueChanged.AddListener(delegate { OnToleranceSliderValueChanged(toleranceSlider); });
+
+        List<string> gnames = Enum.GetNames(typeof(GestureTypeFormat)).ToList();
+        gnames.Remove("None");
+        gnames.Add("ALL");
+        gnames.Sort();
+        gestureTypeDDL.options = new List<TMP_Dropdown.OptionData>(
+            from item in gnames
+            select new TMP_Dropdown.OptionData(item)
+            );
+        gestureTypeDDL.value = 0;
+        gestureTypeDDL.onValueChanged.AddListener(delegate { OnGestureTypeDDLValueChanged(gestureTypeDDL); });
+
+        List<string> htypes = Enum.GetNames(typeof(HandTypeFormat)).ToList();
+        htypes.Sort();
+        handTypeDDL.options = new List<TMP_Dropdown.OptionData>(
+            from item in htypes
+            select new TMP_Dropdown.OptionData(item));
+        handTypeDDL.value = 0;
+        handTypeDDL.onValueChanged.AddListener(delegate { OnHandTypeDDLValueChanged(handTypeDDL); });
+
+        gridRow = GameObject.Find("Row");
+        gridCell = GameObject.Find("RowCell");
+        gridRow.SetActive(false);
+        outputPanel = GameObject.Find("OutputPanel");
+
+        resultTolerance = GameObject.Find("ResultTolerance").GetComponent<TMP_Text>();
+        resultConsensus = GameObject.Find("ResultConsensus").GetComponent<TMP_Text>();
+    }
+
+    private void OnToleranceSwitchValueChanged(UnityEngine.UI.Toggle toggle)
+    {
+        toleranceInput.enabled = toggle.isOn;
+    }
+
+    private void OnToleranceSliderValueChanged(UnityEngine.UI.Slider slider)
+    {
+        toleranceInput.text = Math.Round(slider.value / 100, 2).ToString();
+        if (fromResult != null)
+        {
+            resultTolerance.text = string.Format("Tolerance: {0}", toleranceInput.text);
+            resultConsensus.text = string.Format("Consesnsus: {0}%", fromResult.GetRelativeConsensus(Math.Round(slider.value / 100, 2)));
+        }
+    }
+
+    private void OnGestureTypeDDLValueChanged(TMP_Dropdown ddl)
+    {
+        string gtype = GetCurrentGesture();
+        ChangeVisibilityOfGestures(
+            true,
+            GetCurrentHandType(),
+            gtype.ToLower() != "all" ? gtype : "");
+    }
+
+    private void OnHandTypeDDLValueChanged(TMP_Dropdown ddl)
+    {
+        string gtype = GetCurrentGesture();
+        ChangeVisibilityOfGestures(
+            true,
+            GetCurrentHandType(),
+            gtype.ToLower() != "all" ? gtype : "");
     }
 
     private void BuildPositioVectores(int gestureCount)
@@ -78,8 +173,10 @@ public class CanvasController : MonoBehaviour
                     gesture.HandModel.SetActive(false);
                     gesture.Tag = gestureItem.Key.ToString();
                     gesture.PositionFactor = positionFactores[gesture_index++];
-                    foreach (HandJointController childController in gesture.HandModel.GetComponentsInChildren<HandJointController>())
-                        childController.gestureName = string.Format("{0} | {1} | {2}", person.Name, gesture.HandType.ToString(), gestureItem.Key.ToString());
+                    gesture.HandModel.GetComponentInChildren<CubeController>().gestureName =
+                        string.Format("{0} | {1} | {2}", person.Name, gesture.HandType.ToString(), gestureItem.Key.ToString());
+                    //foreach (HandJointController childController in gesture.HandModel.GetComponentsInChildren<HandJointController>())
+                    //    childController.gestureName = string.Format("{0} | {1} | {2}", person.Name, gesture.HandType.ToString(), gestureItem.Key.ToString());
 
                     // Assign TagDisplayer's gesture refrence to this gesture class.
                     // Prepair data....
@@ -103,14 +200,8 @@ public class CanvasController : MonoBehaviour
         {
             for (int i = 0; i < Constants.NUM_JOINTS; i++)
             {
-                GameObject clone = Instantiate(handJointTemplate, Vector3.zero, Quaternion.identity);
+                GameObject clone = Instantiate(handJointTemplate, Vector3.zero, Quaternion.identity, handModel.transform);
                 clone.name = string.Format("Joint{0}", i);
-                Transform transform = clone.GetComponent<Transform>();
-                SphereCollider sphereCollider = clone.GetComponent<SphereCollider>();
-
-                float sphere_diameter = sphereCollider.radius * 2;
-                transform.position = new Vector3(i * sphere_diameter + 1, 0.5f, 0);
-                transform.SetParent(handModel.transform);
             }
         }
         else
@@ -159,42 +250,97 @@ public class CanvasController : MonoBehaviour
     /// <summary>
     /// Displays a category of gestures and their tag.
     /// </summary>
-    public void ChangeVisibilityOfGestures(bool visibility, string byCategoryName = "")
+    public void ChangeVisibilityOfGestures(bool visibility, HandTypeFormat handType, string byCategoryName = "")
     {
         GestureTypeFormat gType = GestureTypeFormat.None;
         if (byCategoryName != null && byCategoryName != "")
-            if(!System.Enum.TryParse(byCategoryName, out gType))
+            if (!System.Enum.TryParse(byCategoryName, out gType))
                 throw new System.Exception("Cannot able to convert given category name to format.");
         foreach (Person person in GestureProcessor.Instance.GestureCollection)
             foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
                 foreach (Gesture gesture in gestureItem.Value)
                 {
-                    if (gType != GestureTypeFormat.None && gestureItem.Key == gType)
-                        gesture.HandModel.SetActive(visibility);
-                    else if (byCategoryName == null || byCategoryName == "")
-                        gesture.HandModel.SetActive(visibility);
+                    if (gesture.HandType == handType)
+                    {
+                        if (gType != GestureTypeFormat.None && gestureItem.Key == gType)
+                            gesture.HandModel.SetActive(visibility);
+                        else if (byCategoryName == null || byCategoryName == "")
+                            gesture.HandModel.SetActive(visibility);
+                        else
+                            gesture.HandModel.SetActive(!visibility);
+                    }
                     else
-                        gesture.HandModel.SetActive(!visibility);
+                        gesture.HandModel.SetActive(false);
                 }
+    }
+
+    private HandTypeFormat GetCurrentHandType()
+    {
+        return (HandTypeFormat)Enum.Parse(typeof(HandTypeFormat), handTypeDDL.options[handTypeDDL.value].text);
+    }
+
+    private string GetCurrentGesture()
+    {
+        return gestureTypeDDL.options[gestureTypeDDL.value].text;
     }
 
     public void Analyse()
     {
-        TMP_InputField inputGestureTypeTBox = GameObject.Find("InputGestureType").GetComponent<TMP_InputField>();
-        TMP_InputField inputToleranceTBox = GameObject.Find("InputTolerance").GetComponent<TMP_InputField>();
-        TMP_Text resultStatusLabel = GameObject.Find("ResultStatus").GetComponent<TMP_Text>();
-        
+        string gestureType = gestureTypeDDL.options[gestureTypeDDL.value].text;
         GestureTypeFormat gType = GestureTypeFormat.None;
-        if (System.Enum.TryParse(inputGestureTypeTBox.text.Trim().ToLower(), ignoreCase: true, out gType) && gType != GestureTypeFormat.None)
+        if (Enum.TryParse(gestureType.Trim().ToLower(), ignoreCase: true, out gType) && gType != GestureTypeFormat.None)
         {
-            double inputToleranceValue = -1;
-            double.TryParse(inputToleranceTBox.text.Trim(), out inputToleranceValue);
-            KeyValuePair<double, double> toleranceConsensusPair = GestureProcessor.Instance.GetConsensusByGestureType(
-                gType,
-                double.TryParse(inputToleranceTBox.text.Trim(), out inputToleranceValue) ? inputToleranceValue : -1);
-            resultStatusLabel.text = string.Format("Tolerance: {0} | Consesnsus: {1}%", toleranceConsensusPair.Key, toleranceConsensusPair.Value);
+            fromResult = GestureProcessor.Instance.GetConsensusOfPersons(
+                DissimilarityFunctionType.NormalizedDTW,
+                AggregationType.Average,
+                gestureType: gType,
+                graphScale: 100
+                );
+            double inputtolerancevalue = toleranceSwitch.isOn ? double.Parse(toleranceInput.text) : -1;
+            Tuple<double, double> toleranceConsensusPair;
+            if (!toleranceSwitch.isOn)
+                toleranceConsensusPair = fromResult.GetHighestToleranceConsensusPair();
+            else
+                toleranceConsensusPair = new Tuple<double, double>(
+                    Math.Round(inputtolerancevalue, 2),
+                    fromResult.GetRelativeConsensus(Math.Round(inputtolerancevalue, 2)));
+
+            resultTolerance.text = string.Format("Tolerance: {0}", Math.Round(toleranceConsensusPair.Item1, 2));
+            resultConsensus.text = string.Format("Consesnsus: {0}%", Math.Round(toleranceConsensusPair.Item2, 2));
+            toleranceSlider.value = (int)(Math.Round(toleranceConsensusPair.Item1, 2) * 100);
+            toleranceInput.text = Math.Round(toleranceConsensusPair.Item1, 2).ToString();
+            CreateResultTable(fromResult);
         }
         else
             Debug.LogError("Invalid Gesture Type entered!");
+    }
+
+    private void CreateResultTable(ComparisionResult fromResult)
+    {
+        GameObject svContent = GameObject.Find("SVContent");
+        if (svContent.transform.childCount > 1)
+            for (int i = 1; i < svContent.transform.childCount; i++)
+                Destroy(svContent.transform.GetChild(i).gameObject);
+        var result = fromResult.GetDissimilarityMatric();
+        for (int i = 0; i < result.Count; i++)
+        {
+            GameObject newRow = Instantiate(gridRow, svContent.transform);
+            newRow.SetActive(true);
+            newRow.name = string.Format("Row{0}", i);
+            newRow.transform.GetChild(0).gameObject.SetActive(false);
+            AddCell(newRow, string.Format("{0} {1}", "Person", result[i].Item1), new RectOffset(5, 0, 0, 0));
+            AddCell(newRow, string.Format("{0} {1}", "Person", result[i].Item2), new RectOffset(5, 0, 0, 0));
+            AddCell(newRow, string.Format("{0}", result[i].Item3), new RectOffset(0, 18, 0, 0), TextAlignmentOptions.MidlineRight);
+        }
+    }
+
+    private void AddCell(GameObject row, string text, RectOffset cellPadding, TextAlignmentOptions textAlignment = TextAlignmentOptions.MidlineLeft)
+    {
+        GameObject newCell = Instantiate(gridCell, row.transform);
+        newCell.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().padding = cellPadding;
+        TMP_Text textComponent = newCell.GetComponentInChildren<TMP_Text>();
+        textComponent.color = Color.black;
+        textComponent.text = text;
+        textComponent.alignment = textAlignment;
     }
 }

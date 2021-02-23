@@ -68,7 +68,9 @@
     <Compile Include="Assets\Scripts\BoundingBox.cs" />
     <Compile Include="Assets\Scripts\CanvasController.cs" />
     <Compile Include="Assets\Scripts\Constants.cs" />
+    <Compile Include="Assets\Scripts\CubeController.cs" />
     <Compile Include="Assets\Scripts\DissimilarityFunctions.cs" />
+    <Compile Include="Assets\Scripts\Extension.cs" />
     <Compile Include="Assets\Scripts\Gesture.cs" />
     <Compile Include="Assets\Scripts\GestureProcessor.cs" />
     <Compile Include="Assets\Scripts\HandJointController.cs" />
