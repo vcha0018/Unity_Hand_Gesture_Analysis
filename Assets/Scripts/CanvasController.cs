@@ -14,10 +14,16 @@ public class CanvasController : MonoBehaviour
     private int boxScale = 300;
     private int spaceBetweenGestureType = 100;
     private int spaceBetweenPersons = 100;
+    private int spaceBetweenGestures = 40;
+    private float cubeOverHandModel_ZIndex = -20.0f;
 
     UnityEngine.UI.Toggle toleranceSwitch;
+    UnityEngine.UI.Toggle animationModeSwitch;
     UnityEngine.UI.Slider toleranceSlider;
+    UnityEngine.UI.Slider animationSlider;
+    UnityEngine.UI.Slider zoomSlider;
     UnityEngine.UI.Button analyseButton;
+    Camera mainCamera;
     TMP_InputField toleranceInput;
     TMP_Dropdown gestureTypeDDL;
     TMP_Dropdown handTypeDDL;
@@ -52,7 +58,7 @@ public class CanvasController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (isInitialized)
+        if (isInitialized && animationModeSwitch.isOn)
             foreach (Person person in GestureProcessor.Instance.GestureCollection)
                 foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
                     foreach (Gesture gesture in gestureItem.Value)
@@ -62,7 +68,7 @@ public class CanvasController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (isInitialized)
+        if (isInitialized && animationModeSwitch.isOn)
             foreach (Person person in GestureProcessor.Instance.GestureCollection)
                 foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
                     foreach (Gesture gesture in gestureItem.Value)
@@ -75,32 +81,37 @@ public class CanvasController : MonoBehaviour
     /// </summary>
     private void OnDrawGizmos()
     {
-        //if (isInitialized)
-        //    foreach (Person person in GestureProcessor.Instance.GestureCollection)
-        //        foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
-        //            foreach (Gesture gesture in gestureItem.Value)
-        //            {
-        //                if (gesture.HandModel != null)
-        //                {
-        //                    Gizmos.color = Color.red;
-        //                    if (gesture.HandModel != null && gesture.HandModel.activeSelf)
-        //                    {
-        //                        Gizmos.DrawWireCube(gesture.Centroid - gesture.PositionFactor, gesture.GetBoundingBoxSize() * rescaleFactor);
-        //                    }
-        //                }
-        //            }
+        if (isInitialized)
+            foreach (Person person in GestureProcessor.Instance.GestureCollection)
+                foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
+                    foreach (Gesture gesture in gestureItem.Value)
+                    {
+                        if (gesture.HandModel != null)
+                        {
+                            Gizmos.color = Color.red;
+                            if (gesture.HandModel != null && gesture.HandModel.activeSelf)
+                            {
+                                Gizmos.DrawWireCube(gesture.Centroid - gesture.PositionFactor * rescaleFactor, gesture.GetBoundingBoxSize() * rescaleFactor);
+                            }
+                        }
+                    }
     }
     #endregion
 
     #region UI Initialization, Events
     private void InitializeUIElements()
     {
+        mainCamera = GameObject.Find("Main Camera").GetComponent<Camera>();
         analyseButton = GameObject.Find("AnalyseButton").GetComponent<UnityEngine.UI.Button>();
         toleranceSwitch = GameObject.Find("ToleranceSwitch").GetComponent<UnityEngine.UI.Toggle>();
         toleranceSlider = GameObject.Find("ToleranceSlider").GetComponent<UnityEngine.UI.Slider>();
+        animationModeSwitch = GameObject.Find("AnimationModeSwitch").GetComponent<UnityEngine.UI.Toggle>();
+        animationSlider = GameObject.Find("AnimationSlider").GetComponent<UnityEngine.UI.Slider>();
+        zoomSlider = GameObject.Find("ZoomSlider").GetComponent<UnityEngine.UI.Slider>();
         toleranceInput = GameObject.Find("ToleranceInput").GetComponent<TMP_InputField>();
         gestureTypeDDL = GameObject.Find("GestureTypeDDL").GetComponent<TMP_Dropdown>();
         handTypeDDL = GameObject.Find("HandTypeDDL").GetComponent<TMP_Dropdown>();
+
 
         analyseButton.onClick.AddListener(delegate { OnAnalyseButtonClick(analyseButton); });
 
@@ -133,6 +144,23 @@ public class CanvasController : MonoBehaviour
         handTypeDDL.value = 0;
         handTypeDDL.onValueChanged.AddListener(delegate { OnHandTypeDDLValueChanged(handTypeDDL); });
 
+        animationModeSwitch.isOn = true;
+        animationModeSwitch.onValueChanged.AddListener(delegate { OnAnimationModeSwitchValueChanged(animationModeSwitch); });
+
+        animationSlider.enabled = !animationModeSwitch.isOn;
+        animationSlider.minValue = 0;
+        animationSlider.maxValue = 20;
+        animationSlider.value = 0;
+        animationSlider.wholeNumbers = true;
+        animationSlider.onValueChanged.AddListener(delegate { OnAnimationSliderValueChanged(animationSlider); });
+
+        zoomSlider.minValue = 35;
+        zoomSlider.maxValue = 70;
+        zoomSlider.value = mainCamera.fieldOfView;
+        zoomSlider.wholeNumbers = true;
+        zoomSlider.onValueChanged.AddListener(delegate { OnZoomSliderValueChanged(zoomSlider); });
+
+
         gridRow = GameObject.Find("Row");
         gridCell = GameObject.Find("RowCell");
         gridRow.SetActive(false);
@@ -140,6 +168,30 @@ public class CanvasController : MonoBehaviour
 
         resultTolerance = GameObject.Find("ResultTolerance").GetComponent<TMP_Text>();
         resultConsensus = GameObject.Find("ResultConsensus").GetComponent<TMP_Text>();
+    }
+
+    private void OnZoomSliderValueChanged(UnityEngine.UI.Slider slider)
+    {
+        mainCamera.fieldOfView = slider.value;
+    }
+
+    private void OnAnimationSliderValueChanged(UnityEngine.UI.Slider slider)
+    {
+        foreach (Person person in GestureProcessor.Instance.GestureCollection)
+            foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
+                foreach (Gesture gesture in gestureItem.Value)
+                    if (gesture.HandModel != null)
+                        gesture.AnimateInSliderMode(slider.maxValue, slider.value);
+    }
+
+    private void OnAnimationModeSwitchValueChanged(UnityEngine.UI.Toggle toggle)
+    {
+        animationSlider.enabled = !toggle.isOn;
+        foreach (Person person in GestureProcessor.Instance.GestureCollection)
+            foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
+                foreach (Gesture gesture in gestureItem.Value)
+                    if (gesture.HandModel != null)
+                        gesture.Reset();
     }
 
     private void OnToleranceSwitchValueChanged(UnityEngine.UI.Toggle toggle)
@@ -242,7 +294,6 @@ public class CanvasController : MonoBehaviour
         {
             foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
             {
-                //Dictionary<HandTypeFormat, Vector3> lastHandTypeVector = new Dictionary<HandTypeFormat, Vector3>();
                 foreach (Gesture gesture in gestureItem.Value)
                 {
                     gesture.HandModel = BuildHandModel(handJointObject, haneModelParent);
@@ -257,36 +308,11 @@ public class CanvasController : MonoBehaviour
                     // Prepair data....
                     gesture.NormalizeGesture();
                     gesture.TransformJoints();
-                    //gesture.HandModel.transform.localScale *= rescaleFactor;
-                    //gesture.HandModel.transform.localPosition = new Vector3(0, 0, 0);
-
-                    //if (lastHandTypeVector.Count == 0)
-                    //{
-                    //    gesture.PositionFactor = new Vector3(nextVector.x, nextVector.y, nextVector.z);
-                    //    lastHandTypeVector.Add(gesture.HandType, new Vector3(gesture.PositionFactor.x + boxScale, gesture.PositionFactor.y, gesture.PositionFactor.z));
-                    //}
-                    //else
-                    //{
-                    //    if (lastHandTypeVector.ContainsKey(gesture.HandType))
-                    //    {
-                    //        gesture.PositionFactor = new Vector3(lastHandTypeVector[gesture.HandType].x, lastHandTypeVector[gesture.HandType].y, lastHandTypeVector[gesture.HandType].z);
-                    //        lastHandTypeVector[gesture.HandType] = new Vector3(gesture.PositionFactor.x + boxScale, gesture.PositionFactor.y, gesture.PositionFactor.z);
-                    //    }
-                    //    else
-                    //    {
-                    //        gesture.PositionFactor = new Vector3(nextVector.x, nextVector.y, nextVector.z);
-                    //        lastHandTypeVector.Add(gesture.HandType, new Vector3(gesture.PositionFactor.x + boxScale, gesture.PositionFactor.y, gesture.PositionFactor.z));
-                    //    }
-                    //}
-                    //gesture.HandModel.transform.GetChild(1).localPosition = gesture.PositionFactor;
                 }
-                //nextVector = new Vector3(lastHandTypeVector.Select(item => item.Value.x).Max() + spaceBetweenGestureType, nextVector.y, nextVector.z);
             }
-            //nextVector = new Vector3(0, nextVector.y + boxScale, 0);
         }
     }
 
-    
     private void SetHandModelPositions(GestureTypeFormat gestureType, HandTypeFormat handType)
     {
         Vector3 nextVector = new Vector3(0, 0, 0);
@@ -298,11 +324,16 @@ public class CanvasController : MonoBehaviour
                 {
                     foreach (Gesture gesture in gestureItem.Value)
                     {
-                        if (gesture.HandType == handType)
+                        if (gesture.HandType == handType && gesture.HandModel != null)
                         {
                             gesture.PositionFactor = new Vector3(nextVector.x, nextVector.y, nextVector.z);
-                            gesture.HandModel.transform.GetChild(1).localPosition = gesture.PositionFactor;
-                            nextVector = new Vector3(nextVector.x + boxScale, nextVector.y, nextVector.z);
+                            gesture.HandModel.transform.localPosition = new Vector3((nextVector.x / boxScale) * 14, (nextVector.y / boxScale) * 14, 0);
+                            gesture.HandModel.transform.GetChild(0).localPosition = new Vector3(gesture.PositionFactor.x, gesture.PositionFactor.y, cubeOverHandModel_ZIndex);
+                            nextVector = new Vector3(nextVector.x + boxScale + spaceBetweenGestures, nextVector.y, nextVector.z);
+
+                            gesture.Reset();
+                            gesture.ConditionCheck();
+                            gesture.AnimateInAnimationMode();
                         }
                     }
                     nextVector = new Vector3(nextVector.x + spaceBetweenGestureType, nextVector.y, nextVector.z);

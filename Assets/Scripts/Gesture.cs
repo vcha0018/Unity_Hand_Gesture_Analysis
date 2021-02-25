@@ -270,18 +270,46 @@ namespace DataStructure
             {
                 for (int i = 2; i < _jointTransforms.Length; i++)
                 {
-                    try
-                    {
-                        Vector3 start_pos = _jointTransforms[i].localPosition;
-                        Vector3 end_pos = HandPoses[_currentHandPoseIndex].Joints[i - 2] + _positionFactor;
+                    Vector3 start_pos = _jointTransforms[i].localPosition;
+                    Vector3 end_pos = HandPoses[_currentHandPoseIndex].Joints[i - 2] + _positionFactor;
 
-                        float ratio = ((_timer * 1000) - _csv_previous_timestamp) / (_csv_current_timestamp - _csv_previous_timestamp);
-                        _jointTransforms[i].localPosition = Vector3.Lerp(start_pos, end_pos, ratio);
-                    }
-                    catch (Exception e)
-                    {
-                        throw;
-                    }
+                    float ratio = ((_timer * 1000) - _csv_previous_timestamp) / (_csv_current_timestamp - _csv_previous_timestamp);
+                    _jointTransforms[i].localPosition = Vector3.Lerp(start_pos, end_pos, ratio);
+                }
+            }
+        }
+
+        public void AnimateInSliderMode(float max, float current)
+        {
+            float totalTime = (HandPoses.Last().TimeStamp - HandPoses[0].TimeStamp) - HandPoses[0].TimeStamp;
+
+            _timer = totalTime * (current / max);
+
+            ConditionCheckForSliderMode(_timer);
+
+            if (_jointTransforms != null && _jointTransforms.Length > 2)
+            {
+                for (int i = 2; i < _jointTransforms.Length; i++)
+                {
+                    Vector3 start_pos = _jointTransforms[i].localPosition;
+                    Vector3 end_pos = HandPoses[_currentHandPoseIndex].Joints[i - 2] + _positionFactor;
+
+                    float ratio = ((_timer * 1000) - _csv_previous_timestamp) / (_csv_current_timestamp - _csv_previous_timestamp);
+                    _jointTransforms[i].localPosition = Vector3.Lerp(start_pos, end_pos, ratio);
+                }
+            }
+        }
+
+        private void ConditionCheckForSliderMode(float time)
+        {
+            for (int i = 1; i < HandPoses.Count; i++)
+            {
+                if (HandPoses[i].TimeStamp > time)
+                {
+                    _currentHandPoseIndex = i;
+                    _csv_current_timestamp = HandPoses[_currentHandPoseIndex].TimeStamp - HandPoses[0].TimeStamp;
+                    _csv_previous_timestamp = HandPoses[_currentHandPoseIndex - 1].TimeStamp - HandPoses[0].TimeStamp;
+                    break;
                 }
             }
         }
