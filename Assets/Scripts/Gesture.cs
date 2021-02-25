@@ -219,8 +219,8 @@ namespace DataStructure
             _currentHandPoseIndex++;
             _jointTransforms = HandModel.GetComponentsInChildren<Transform>();
             _jointTransforms[0].localPosition = new Vector3(0, 0, 0);
-            _jointTransforms[1].localPosition = new Vector3(_positionFactor.x, _positionFactor.y, _positionFactor.z - 50);
-            _jointTransforms[1].localScale = new Vector3(300 - 50, 300 - 50, 0);
+            _jointTransforms[1].localPosition = new Vector3(_positionFactor.x, _positionFactor.y, _positionFactor.z);
+            _jointTransforms[1].localScale = new Vector3(300, 300, 0);
             for (int i = 2; i < _jointTransforms.Length; i++)
             {
                 _jointTransforms[i].localPosition = HandPoses[0].Joints[i - 2] + _positionFactor;

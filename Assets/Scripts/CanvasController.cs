@@ -9,14 +9,15 @@ using System;
 public class CanvasController : MonoBehaviour
 {
     private System.Random _random = new System.Random();
-    private List<Vector3> positionFactores = new List<Vector3>();
-    private float boundingLength = float.NaN;
-    private float rescaleFactor = float.NaN;
-    private float rescaleReference = 300;
     private bool isInitialized = false;
+    private float rescaleFactor = float.NaN;
+    private int boxScale = 300;
+    private int spaceBetweenGestureType = 100;
+    private int spaceBetweenPersons = 100;
 
     UnityEngine.UI.Toggle toleranceSwitch;
     UnityEngine.UI.Slider toleranceSlider;
+    UnityEngine.UI.Button analyseButton;
     TMP_InputField toleranceInput;
     TMP_Dropdown gestureTypeDDL;
     TMP_Dropdown handTypeDDL;
@@ -27,11 +28,12 @@ public class CanvasController : MonoBehaviour
     GameObject gridCell;
     ComparisionResult fromResult;
 
+    #region Unity Function Events
     private void Awake()
     {
         InitializeUIElements();
         GameObject handJoint = GameObject.Find("HandJoint");
-        BuildPositioVectores(GestureProcessor.Instance.TotalGestures);
+        //BuildPositionVectores(GestureProcessor.Instance.TotalGestures);
         AssignHandModelsToGestures(handJoint);
         handJoint.SetActive(false);
         isInitialized = true;
@@ -47,13 +49,60 @@ public class CanvasController : MonoBehaviour
             gtype.ToLower() != "all" ? gtype : "");
     }
 
+    // Update is called once per frame
+    void Update()
+    {
+        if (isInitialized)
+            foreach (Person person in GestureProcessor.Instance.GestureCollection)
+                foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
+                    foreach (Gesture gesture in gestureItem.Value)
+                        if (gesture.HandModel != null)
+                            gesture.ConditionCheck();
+    }
+
+    private void FixedUpdate()
+    {
+        if (isInitialized)
+            foreach (Person person in GestureProcessor.Instance.GestureCollection)
+                foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
+                    foreach (Gesture gesture in gestureItem.Value)
+                        if (gesture.HandModel != null)
+                            gesture.AnimateInAnimationMode();
+    }
+
+    /// <summary>
+    /// Draws the bounding box for a gesture
+    /// </summary>
+    private void OnDrawGizmos()
+    {
+        //if (isInitialized)
+        //    foreach (Person person in GestureProcessor.Instance.GestureCollection)
+        //        foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
+        //            foreach (Gesture gesture in gestureItem.Value)
+        //            {
+        //                if (gesture.HandModel != null)
+        //                {
+        //                    Gizmos.color = Color.red;
+        //                    if (gesture.HandModel != null && gesture.HandModel.activeSelf)
+        //                    {
+        //                        Gizmos.DrawWireCube(gesture.Centroid - gesture.PositionFactor, gesture.GetBoundingBoxSize() * rescaleFactor);
+        //                    }
+        //                }
+        //            }
+    }
+    #endregion
+
+    #region UI Initialization, Events
     private void InitializeUIElements()
     {
+        analyseButton = GameObject.Find("AnalyseButton").GetComponent<UnityEngine.UI.Button>();
         toleranceSwitch = GameObject.Find("ToleranceSwitch").GetComponent<UnityEngine.UI.Toggle>();
         toleranceSlider = GameObject.Find("ToleranceSlider").GetComponent<UnityEngine.UI.Slider>();
         toleranceInput = GameObject.Find("ToleranceInput").GetComponent<TMP_InputField>();
         gestureTypeDDL = GameObject.Find("GestureTypeDDL").GetComponent<TMP_Dropdown>();
         handTypeDDL = GameObject.Find("HandTypeDDL").GetComponent<TMP_Dropdown>();
+
+        analyseButton.onClick.AddListener(delegate { OnAnalyseButtonClick(analyseButton); });
 
         toleranceInput.enabled = toleranceSwitch.isOn = false;
         toleranceSwitch.onValueChanged.AddListener(delegate { OnToleranceSwitchValueChanged(toleranceSwitch); });
@@ -126,165 +175,7 @@ public class CanvasController : MonoBehaviour
             gtype.ToLower() != "all" ? gtype : "");
     }
 
-    private void BuildPositioVectores(int gestureCount)
-    {
-        if (gestureCount < 1)
-            throw new System.ArgumentException("Looks like there are no gestures in the pool.");
-        boundingLength = float.Parse(System.Math.Sqrt(Screen.width * Screen.height / gestureCount).ToString());
-        //CHECK 0: Ceiling function to fit all
-        int row = System.Convert.ToInt32(System.Math.Ceiling(Screen.width / boundingLength));
-        int col = System.Convert.ToInt32(System.Math.Ceiling(Screen.height / boundingLength));
-        int tempCount = gestureCount;
-        positionFactores = new List<Vector3>();
-        for (int i = 0; i < row; i++)
-        {
-            for (int j = 0; j < col; j++)
-            {
-                if (tempCount == 0)
-                {
-                    break;
-                }
-                else
-                {
-                    tempCount -= 1;
-                    float maxX = rescaleReference * row / 2;
-                    float maxY = rescaleReference * col / 2;
-                    positionFactores.Add(new Vector3(maxX - i * rescaleReference, maxY - j * rescaleReference, 0));
-                }
-            }
-        }
-        rescaleFactor = boundingLength / rescaleReference;
-    }
-
-    private void AssignHandModelsToGestures(GameObject handJointTemplate)
-    {
-        if (positionFactores.Count != GestureProcessor.Instance.TotalGestures)
-            throw new System.Exception("Not all gesture has its position assigned.");
-        GameObject haneModelParent = GameObject.Find("HandModels");
-        List<Person> gesture_collection = GestureProcessor.Instance.GestureCollection;
-        int gesture_index = 0;
-        foreach (Person person in gesture_collection)
-        {
-            foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
-            {
-                foreach (Gesture gesture in gestureItem.Value)
-                {
-                    gesture.HandModel = BuildHandModel(handJointTemplate, haneModelParent);
-                    gesture.HandModel.SetActive(false);
-                    gesture.Tag = gestureItem.Key.ToString();
-                    gesture.PositionFactor = positionFactores[gesture_index++];
-                    gesture.HandModel.GetComponentInChildren<CubeController>().gestureName =
-                        string.Format("{0} | {1} | {2}", person.Name, gesture.HandType.ToString(), gestureItem.Key.ToString());
-                    //foreach (HandJointController childController in gesture.HandModel.GetComponentsInChildren<HandJointController>())
-                    //    childController.gestureName = string.Format("{0} | {1} | {2}", person.Name, gesture.HandType.ToString(), gestureItem.Key.ToString());
-
-                    // Assign TagDisplayer's gesture refrence to this gesture class.
-                    // Prepair data....
-                    gesture.NormalizeGesture();
-                    gesture.TransformJoints();
-                    gesture.HandModel.transform.localScale *= rescaleFactor;
-                }
-            }
-        }
-    }
-
-    private GameObject BuildHandModel(GameObject handJointTemplate, GameObject parentObject)
-    {
-        if (parentObject == null)
-            throw new System.ArgumentException("Empty Parent Handmodel!");
-        GameObject handModel = Instantiate(GameObject.Find("HandModelTemplate")); //new GameObject(string.Format("HandModel_{0}", _random.Next(0, 9999).ToString("D4")));
-        handModel.name = string.Format("HandModel_{0}", _random.Next(0, 9999).ToString("D4"));
-        handModel.transform.SetParent(parentObject.transform);
-
-        if (handJointTemplate != null)
-        {
-            for (int i = 0; i < Constants.NUM_JOINTS; i++)
-            {
-                GameObject clone = Instantiate(handJointTemplate, Vector3.zero, Quaternion.identity, handModel.transform);
-                clone.name = string.Format("Joint{0}", i);
-            }
-        }
-        else
-            throw new System.Exception("Unable to Find HandJoint GameObject!");
-
-        return handModel;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        if (isInitialized)
-            foreach (Person person in GestureProcessor.Instance.GestureCollection)
-                foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
-                    foreach (Gesture gesture in gestureItem.Value)
-                        gesture.ConditionCheck();
-    }
-
-    private void FixedUpdate()
-    {
-        if (isInitialized)
-            foreach (Person person in GestureProcessor.Instance.GestureCollection)
-                foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
-                    foreach (Gesture gesture in gestureItem.Value)
-                        gesture.AnimateInAnimationMode();
-    }
-
-    /// <summary>
-    /// Draws the bounding box for a gesture
-    /// </summary>
-    private void OnDrawGizmos()
-    {
-        if (isInitialized)
-            foreach (Person person in GestureProcessor.Instance.GestureCollection)
-                foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
-                    foreach (Gesture gesture in gestureItem.Value)
-                    {
-                        Gizmos.color = Color.red;
-                        if (gesture.HandModel != null && gesture.HandModel.activeSelf)
-                        {
-                            Gizmos.DrawWireCube(gesture.Centroid + gesture.PositionFactor * rescaleFactor, gesture.GetBoundingBoxSize() * rescaleFactor);
-                        }
-                    }
-    }
-
-    /// <summary>
-    /// Displays a category of gestures and their tag.
-    /// </summary>
-    public void ChangeVisibilityOfGestures(bool visibility, HandTypeFormat handType, string byCategoryName = "")
-    {
-        GestureTypeFormat gType = GestureTypeFormat.None;
-        if (byCategoryName != null && byCategoryName != "")
-            if (!System.Enum.TryParse(byCategoryName, out gType))
-                throw new System.Exception("Cannot able to convert given category name to format.");
-        foreach (Person person in GestureProcessor.Instance.GestureCollection)
-            foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
-                foreach (Gesture gesture in gestureItem.Value)
-                {
-                    if (gesture.HandType == handType)
-                    {
-                        if (gType != GestureTypeFormat.None && gestureItem.Key == gType)
-                            gesture.HandModel.SetActive(visibility);
-                        else if (byCategoryName == null || byCategoryName == "")
-                            gesture.HandModel.SetActive(visibility);
-                        else
-                            gesture.HandModel.SetActive(!visibility);
-                    }
-                    else
-                        gesture.HandModel.SetActive(false);
-                }
-    }
-
-    private HandTypeFormat GetCurrentHandType()
-    {
-        return (HandTypeFormat)Enum.Parse(typeof(HandTypeFormat), handTypeDDL.options[handTypeDDL.value].text);
-    }
-
-    private string GetCurrentGesture()
-    {
-        return gestureTypeDDL.options[gestureTypeDDL.value].text;
-    }
-
-    public void Analyse()
+    private void OnAnalyseButtonClick(UnityEngine.UI.Button button)
     {
         string gestureType = gestureTypeDDL.options[gestureTypeDDL.value].text;
         GestureTypeFormat gType = GestureTypeFormat.None;
@@ -313,6 +204,148 @@ public class CanvasController : MonoBehaviour
         }
         else
             Debug.LogError("Invalid Gesture Type entered!");
+    }
+    #endregion
+
+    private GameObject BuildHandModel(GameObject handJointObject, GameObject parentObject)
+    {
+        if (parentObject == null)
+            throw new System.ArgumentException("Empty Parent Handmodel!");
+        GameObject handModel = Instantiate(GameObject.Find("HandModelTemplate"));
+        handModel.name = string.Format("HandModel_{0}", _random.Next(0, 9999).ToString("D4"));
+        handModel.transform.SetParent(parentObject.transform);
+        handModel.transform.localPosition = new Vector3(0, 0, 0);
+        handModel.transform.localRotation = Quaternion.Euler(0, 0, 0);
+        rescaleFactor = float.Parse(System.Math.Sqrt(Screen.width * Screen.height / GestureProcessor.Instance.TotalGestures).ToString()) / boxScale;
+        handModel.transform.localScale *= (rescaleFactor - 0.05f);
+
+        if (handJointObject != null)
+        {
+            for (int i = 0; i < Constants.NUM_JOINTS; i++)
+            {
+                GameObject clone = Instantiate(handJointObject, Vector3.zero, Quaternion.identity, handModel.transform);
+                clone.name = string.Format("Joint{0}", i);
+            }
+        }
+        else
+            throw new System.Exception("Unable to Find HandJoint GameObject!");
+
+        return handModel;
+    }
+
+    private void AssignHandModelsToGestures(GameObject handJointObject)
+    {
+        GameObject haneModelParent = GameObject.Find("HandModels");
+        List<Person> gesture_collection = GestureProcessor.Instance.GestureCollection;
+        Vector3 nextVector = new Vector3(0, 0, 0);
+        foreach (Person person in gesture_collection)
+        {
+            foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
+            {
+                //Dictionary<HandTypeFormat, Vector3> lastHandTypeVector = new Dictionary<HandTypeFormat, Vector3>();
+                foreach (Gesture gesture in gestureItem.Value)
+                {
+                    gesture.HandModel = BuildHandModel(handJointObject, haneModelParent);
+                    gesture.HandModel.SetActive(false);
+                    gesture.Tag = gestureItem.Key.ToString();
+                    GameObject canvas = GameObject.Find("Canvas");
+                    gesture.HandModel.GetComponentInChildren<CubeController>().gestureName =
+                        string.Format("{0} | {1} | {2}", person.Name, gesture.HandType.ToString(), gestureItem.Key.ToString());
+
+                    gesture.HandModel.SetActive(true);
+
+                    // Prepair data....
+                    gesture.NormalizeGesture();
+                    gesture.TransformJoints();
+                    //gesture.HandModel.transform.localScale *= rescaleFactor;
+                    //gesture.HandModel.transform.localPosition = new Vector3(0, 0, 0);
+
+                    //if (lastHandTypeVector.Count == 0)
+                    //{
+                    //    gesture.PositionFactor = new Vector3(nextVector.x, nextVector.y, nextVector.z);
+                    //    lastHandTypeVector.Add(gesture.HandType, new Vector3(gesture.PositionFactor.x + boxScale, gesture.PositionFactor.y, gesture.PositionFactor.z));
+                    //}
+                    //else
+                    //{
+                    //    if (lastHandTypeVector.ContainsKey(gesture.HandType))
+                    //    {
+                    //        gesture.PositionFactor = new Vector3(lastHandTypeVector[gesture.HandType].x, lastHandTypeVector[gesture.HandType].y, lastHandTypeVector[gesture.HandType].z);
+                    //        lastHandTypeVector[gesture.HandType] = new Vector3(gesture.PositionFactor.x + boxScale, gesture.PositionFactor.y, gesture.PositionFactor.z);
+                    //    }
+                    //    else
+                    //    {
+                    //        gesture.PositionFactor = new Vector3(nextVector.x, nextVector.y, nextVector.z);
+                    //        lastHandTypeVector.Add(gesture.HandType, new Vector3(gesture.PositionFactor.x + boxScale, gesture.PositionFactor.y, gesture.PositionFactor.z));
+                    //    }
+                    //}
+                    //gesture.HandModel.transform.GetChild(1).localPosition = gesture.PositionFactor;
+                }
+                //nextVector = new Vector3(lastHandTypeVector.Select(item => item.Value.x).Max() + spaceBetweenGestureType, nextVector.y, nextVector.z);
+            }
+            //nextVector = new Vector3(0, nextVector.y + boxScale, 0);
+        }
+    }
+
+    
+    private void SetHandModelPositions(GestureTypeFormat gestureType, HandTypeFormat handType)
+    {
+        Vector3 nextVector = new Vector3(0, 0, 0);
+        foreach (Person person in GestureProcessor.Instance.GestureCollection)
+        {
+            foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
+            {
+                if (gestureItem.Key == gestureType || gestureType == GestureTypeFormat.None)
+                {
+                    foreach (Gesture gesture in gestureItem.Value)
+                    {
+                        if (gesture.HandType == handType)
+                        {
+                            gesture.PositionFactor = new Vector3(nextVector.x, nextVector.y, nextVector.z);
+                            gesture.HandModel.transform.GetChild(1).localPosition = gesture.PositionFactor;
+                            nextVector = new Vector3(nextVector.x + boxScale, nextVector.y, nextVector.z);
+                        }
+                    }
+                    nextVector = new Vector3(nextVector.x + spaceBetweenGestureType, nextVector.y, nextVector.z);
+                }
+            }
+            nextVector = new Vector3(0, nextVector.y + boxScale + spaceBetweenPersons, 0);
+        }
+    }
+
+    private void ChangeVisibilityOfGestures(bool visibility, HandTypeFormat handType, string byCategoryName = "")
+    {
+        GestureTypeFormat gType = GestureTypeFormat.None;
+        if (byCategoryName != null && byCategoryName != "")
+            if (!System.Enum.TryParse(byCategoryName, out gType))
+                throw new System.Exception("Cannot able to convert given category name to format.");
+        SetHandModelPositions(gType, handType);
+        foreach (Person person in GestureProcessor.Instance.GestureCollection)
+            foreach (KeyValuePair<GestureTypeFormat, List<Gesture>> gestureItem in person.Gestures)
+                foreach (Gesture gesture in gestureItem.Value)
+                {
+                    if (gesture.HandModel != null)
+                        if (gesture.HandType == handType)
+                        {
+                            if (gType != GestureTypeFormat.None && gestureItem.Key == gType)
+                                gesture.HandModel.SetActive(visibility);
+                            else if (byCategoryName == null || byCategoryName == "")
+                                gesture.HandModel.SetActive(visibility);
+                            else
+                                gesture.HandModel.SetActive(!visibility);
+                        }
+                        else
+                            gesture.HandModel.SetActive(false);
+                }
+    }
+
+    private HandTypeFormat GetCurrentHandType()
+    {
+        return (HandTypeFormat)Enum.Parse(typeof(HandTypeFormat), handTypeDDL.options[handTypeDDL.value].text);
+    }
+
+    private string GetCurrentGesture()
+    {
+        return gestureTypeDDL.options[gestureTypeDDL.value].text;
     }
 
     private void CreateResultTable(ComparisionResult fromResult)
