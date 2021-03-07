@@ -217,19 +217,20 @@ namespace DataStructure
             _csv_previous_timestamp = 0;
             _timer = 0f;
             _currentHandPoseIndex++;
-            _jointTransforms = HandModel.GetComponentsInChildren<Transform>();
-            _jointTransforms[0].localPosition = new Vector3(0, 0, 0);
-            _jointTransforms[1].localPosition = new Vector3(_positionFactor.x, _positionFactor.y, _positionFactor.z);
-            _jointTransforms[1].localScale = new Vector3(300, 300, 0);
-            for (int i = 2; i < _jointTransforms.Length; i++)
+            _jointTransforms = HandModel.transform.Find("Joints").GetComponentsInChildren<Transform>();
+            HandModel.transform.localPosition = new Vector3(0, 0, 0);
+            var transparentCube = HandModel.transform.Find("Cube");
+            transparentCube.localPosition = new Vector3(_positionFactor.x, _positionFactor.y, _positionFactor.z);
+            transparentCube.localScale = new Vector3(300, 300, 0);
+            for (int i = 1; i < _jointTransforms.Length; i++)
             {
-                _jointTransforms[i].localPosition = HandPoses[0].Joints[i - 2] + _positionFactor;
+                _jointTransforms[i].localPosition = HandPoses[0].Joints[i - 1] + _positionFactor;
             }
         }
 
         public void Reset()
         {
-            _jointTransforms = HandModel.GetComponentsInChildren<Transform>();
+            _jointTransforms = HandModel.transform.Find("Joints").GetComponentsInChildren<Transform>();
             _timer = 0f;
             _csv_current_timestamp = HandPoses[0].TimeStamp;
             // CHECK 2
@@ -268,10 +269,10 @@ namespace DataStructure
 
             if (_jointTransforms != null && _jointTransforms.Length > 2 && _csv_previous_timestamp < _csv_current_timestamp)
             {
-                for (int i = 2; i < _jointTransforms.Length; i++)
+                for (int i = 1; i < _jointTransforms.Length; i++)
                 {
                     Vector3 start_pos = _jointTransforms[i].localPosition;
-                    Vector3 end_pos = HandPoses[_currentHandPoseIndex].Joints[i - 2] + _positionFactor;
+                    Vector3 end_pos = HandPoses[_currentHandPoseIndex].Joints[i - 1] + _positionFactor;
 
                     float ratio = ((_timer * 1000) - _csv_previous_timestamp) / (_csv_current_timestamp - _csv_previous_timestamp);
                     _jointTransforms[i].localPosition = Vector3.Lerp(start_pos, end_pos, ratio);
@@ -289,10 +290,10 @@ namespace DataStructure
 
             if (_jointTransforms != null && _jointTransforms.Length > 2)
             {
-                for (int i = 2; i < _jointTransforms.Length; i++)
+                for (int i = 1; i < _jointTransforms.Length; i++)
                 {
                     Vector3 start_pos = _jointTransforms[i].localPosition;
-                    Vector3 end_pos = HandPoses[_currentHandPoseIndex].Joints[i - 2] + _positionFactor;
+                    Vector3 end_pos = HandPoses[_currentHandPoseIndex].Joints[i - 1] + _positionFactor;
 
                     float ratio = ((_timer * 1000) - _csv_previous_timestamp) / (_csv_current_timestamp - _csv_previous_timestamp);
                     _jointTransforms[i].localPosition = Vector3.Lerp(start_pos, end_pos, ratio);

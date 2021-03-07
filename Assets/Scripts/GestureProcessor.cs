@@ -6,15 +6,35 @@ using System.Text;
 using System.Threading.Tasks;
 using Analysis;
 
+
+/// <summary>
+/// It is Middleware Singleton class operate between UI components classes to Analysis classes.
+/// </summary>
 public class GestureProcessor
 {
+    /// <summary>
+    /// To obtain read-write lock on singleton class.
+    /// </summary>
     private static readonly object objLock = new object();
+    /// <summary>
+    /// gesture collection copy used for analysis purpose only.
+    /// </summary>
     protected List<Person> _gestureAnalysisCollection;
+    /// <summary>
+    /// Holds already performed analysis operation on gesture type.
+    /// </summary>
     private Dictionary<GestureTypeFormat, ComparisionResult> _resultSet;
 
+    /// <summary>
+    /// Set true, if want to re-intialize this singleton class.
+    /// </summary>
     public static bool ReInitialize { get; set; }
 
+
     private static GestureProcessor _gestureProcessor;
+    /// <summary>
+    /// It is singleton object of the class.
+    /// </summary>
     public static GestureProcessor Instance
     {
         get
@@ -28,6 +48,9 @@ public class GestureProcessor
         }
     }
 
+    /// <summary>
+    /// Formatted Gesture collection from csv data.
+    /// </summary>
     public List<Person> GestureCollection { get; private set; }
 
     /// <summary>
@@ -41,6 +64,9 @@ public class GestureProcessor
         }
     }
 
+    /// <summary>
+    /// Define gesture frame rate for analysis.
+    /// </summary>
     public int FPS { get; set; }
 
     private GestureProcessor()
@@ -71,6 +97,15 @@ public class GestureProcessor
                 }
     }
 
+    /// <summary>
+    /// Get 
+    /// </summary>
+    /// <param name="dissimilarityFunctionType"></param>
+    /// <param name="aggregationType"></param>
+    /// <param name="gestureType"></param>
+    /// <param name="customTolerance"></param>
+    /// <param name="graphScale"></param>
+    /// <returns></returns>
     public ComparisionResult GetConsensusOfPersons(
         DissimilarityFunctionType dissimilarityFunctionType,
         AggregationType aggregationType,
