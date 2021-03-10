@@ -1,5 +1,22 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿/*
+Author:
+Vivekkumar Chaudhari (vcha0018@student.monash.edu) 
+    Student - Master of Information Technology
+    Monash University, Clayton, Australia
+
+Purpose:
+Developed under Summer Project 'AR Hand Gesture Capture and Analysis'
+
+Supervisors: 
+Barrett Ens (barrett.ens@monash.edu)
+    Monash University, Clayton, Australia
+ Max Cordeil (max.cordeil@monash.edu)
+    Monash University, Clayton, Australia
+
+About File:
+This class used to detect mouse hover events on gesture view.
+*/
+
 using TMPro;
 using UnityEngine;
 
@@ -16,12 +33,6 @@ public class CubeController : MonoBehaviour
     void Start()
     {
         defaultJointColors = new Color[Constants.NUM_JOINTS];
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     /// <summary>

@@ -1,10 +1,27 @@
-﻿using DataStructure;
+﻿/*
+Author:
+Vivekkumar Chaudhari (vcha0018@student.monash.edu) 
+    Student - Master of Information Technology
+    Monash University, Clayton, Australia
+
+Purpose:
+Developed under Summer Project 'AR Hand Gesture Capture and Analysis'
+
+Supervisors: 
+Barrett Ens (barrett.ens@monash.edu)
+    Monash University, Clayton, Australia
+ Max Cordeil (max.cordeil@monash.edu)
+    Monash University, Clayton, Australia
+
+About File:
+It is middle class to interact between UI and Analysis functions.
+*/
+
+using Analysis;
+using DataStructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Analysis;
 
 
 /// <summary>
@@ -98,13 +115,13 @@ public class GestureProcessor
     }
 
     /// <summary>
-    /// Get 
+    /// Get Consensus result between all person's gesture (same type) in the dataset.
     /// </summary>
-    /// <param name="dissimilarityFunctionType"></param>
-    /// <param name="aggregationType"></param>
-    /// <param name="gestureType"></param>
-    /// <param name="customTolerance"></param>
-    /// <param name="graphScale"></param>
+    /// <param name="dissimilarityFunctionType">Specify which dissimilarity function want to use.</param>
+    /// <param name="aggregationType">Specify which aggregation function want to use if one person has multiple data of same gesture type.</param>
+    /// <param name="gestureType">Specify gesture type of person to compare.</param>
+    /// <param name="customTolerance">Specify custom tolerance value if want to get tolerance of it.</param>
+    /// <param name="graphScale">Specify range of values to calculate tolerance from zero to maximum possible tolerance.</param>
     /// <returns></returns>
     public ComparisionResult GetConsensusOfPersons(
         DissimilarityFunctionType dissimilarityFunctionType,
@@ -130,6 +147,15 @@ public class GestureProcessor
         return result.Value;
     }
 
+    /// <summary>
+    /// Get Consensus result between gestures of same type for given person.
+    /// </summary>
+    /// <param name="dissimilarityFunctionType">Specify which dissimilarity function want to use.</param>
+    /// <param name="aggregationType">Specify which aggregation function want to use if one person has multiple data of same gesture type.</param>
+    /// <param name="personName">Specify person name.</param>
+    /// <param name="gestureType">Specify gesture type of person to compare.</param>
+    /// <param name="customTolerance">Specify custom tolerance value if want to get tolerance of it.</param>
+    /// <returns></returns>
     public ComparisionResult GetConsensusOfPerson(
         DissimilarityFunctionType dissimilarityFunctionType,
         AggregationType aggregationType,
@@ -157,6 +183,11 @@ public class GestureProcessor
         return result.Value;
     }
 
+    /// <summary>
+    /// To convert related enum type to dissimilarity function.
+    /// </summary>
+    /// <param name="dissimilarityFunctionType"></param>
+    /// <returns></returns>
     private DissimilarityFunctions.GestureDissimilarity GetDissimilarityFunctionFromType(DissimilarityFunctionType dissimilarityFunctionType)
     {
         switch (dissimilarityFunctionType)
@@ -174,6 +205,11 @@ public class GestureProcessor
         }
     }
 
+    /// <summary>
+    /// To convert related enum type to aggregation function.
+    /// </summary>
+    /// <param name="aggregationType"></param>
+    /// <returns></returns>
     private Analyzer.Aggregator GetAggregatorType(AggregationType aggregationType)
     {
         switch (aggregationType)
@@ -190,11 +226,23 @@ public class GestureProcessor
     }
 }
 
+/// <summary>
+/// Holds gesture consensus result and dissimilarity result after comparision.
+/// </summary>
 public class ComparisionResult
 {
     public List<Tuple<double, double>> toleranceConsensusPair;
     public double[,] dissimilarityMatric;
 
+    /// <summary>
+    /// Convert dissimilarity matric result to List of Tuples.
+    /// Each item in list indicats unique comparision pair and its result.
+    /// Items in Tuple includes:
+    /// Item1: sample 1's gesture
+    /// Item2: sample 2's gesture
+    /// Item3: comparision result between sample 1 and sample 2 gesture.
+    /// </summary>
+    /// <returns></returns>
     public List<Tuple<int, int, double>> GetDissimilarityMatric()
     {
         List<Tuple<int, int, double>> matricPair = new List<Tuple<int, int, double>>();
@@ -210,6 +258,10 @@ public class ComparisionResult
         return matricPair;
     }
 
+    /// <summary>
+    /// Get max tolerance value for 100% consensus.
+    /// </summary>
+    /// <returns></returns>
     public Tuple<double, double> GetHighestToleranceConsensusPair()
     {
         return new Tuple<double, double>(
@@ -218,6 +270,11 @@ public class ComparisionResult
             );
     }
 
+    /// <summary>
+    /// Get consensus value for given tolerance.
+    /// </summary>
+    /// <param name="tolerance"></param>
+    /// <returns></returns>
     public double GetRelativeConsensus(double tolerance)
     {
         return Math.Round(toleranceConsensusPair.OrderBy(item => Math.Abs(tolerance - item.Item1)).First().Item2, 2);

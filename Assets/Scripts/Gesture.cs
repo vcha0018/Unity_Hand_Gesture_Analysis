@@ -1,8 +1,25 @@
-﻿using System;
+﻿/*
+Author:
+Vivekkumar Chaudhari (vcha0018@student.monash.edu) 
+    Student - Master of Information Technology
+    Monash University, Clayton, Australia
+
+Purpose:
+Developed under Summer Project 'AR Hand Gesture Capture and Analysis'
+
+Supervisors: 
+Barrett Ens (barrett.ens@monash.edu)
+    Monash University, Clayton, Australia
+ Max Cordeil (max.cordeil@monash.edu)
+    Monash University, Clayton, Australia
+
+About File:
+Define structure for whole hand gesture (csv file). Used in UI to draw and analysis to calculate dissimilarity index.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace DataStructure
@@ -21,15 +38,24 @@ namespace DataStructure
         private bool isInInitialStage = true;
 
         private BoundingBox _boundingBox;
+        /// <summary>
+        /// Bounding box of this gesture.
+        /// </summary>
         public BoundingBox BoundingBox
         {
             get { return _boundingBox; }
             set { _boundingBox = value; }
         }
 
+        /// <summary>
+        /// Hand type of this gesture.
+        /// </summary>
         public HandTypeFormat HandType { get; set; }
 
         private List<HandPose> _handPoses;
+        /// <summary>
+        /// list of hand poses of this gesture.
+        /// </summary>
         public List<HandPose> HandPoses
         {
             get
@@ -45,11 +71,20 @@ namespace DataStructure
             }
         }
 
+        /// <summary>
+        /// UI hand model object refere to this gesture.
+        /// </summary>
         public GameObject HandModel { get; set; }
 
+        /// <summary>
+        /// Reference Tag of this gesture.
+        /// </summary>
         public string Tag { get; set; }
 
         private Vector3 _positionFactor = new Vector3(0, 0, 0);
+        /// <summary>
+        /// Position factor of this gesture, to display under unity camera co-ordinates.
+        /// </summary>
         public Vector3 PositionFactor
         {
             get
@@ -66,6 +101,9 @@ namespace DataStructure
         }
 
         private Vector3 _centroid;
+        /// <summary>
+        /// central point of this gesture.
+        /// </summary>
         public Vector3 Centroid
         {
             get
@@ -85,6 +123,10 @@ namespace DataStructure
             _handPoses = handPoses;
         }
 
+        /// <summary>
+        /// To get clone of this gesture object.
+        /// </summary>
+        /// <returns></returns>
         public Gesture GetClone()
         {
             return new Gesture()
@@ -94,7 +136,10 @@ namespace DataStructure
             };
         }
 
-        #region Leon Code
+        #region Old Code
+        /// <summary>
+        /// Set bounding box of this gesture to draw under in UI.
+        /// </summary>
         private void SetBoundingBox()
         {
             _boundingBox = new BoundingBox();
@@ -199,6 +244,10 @@ namespace DataStructure
                 gestureCuboid.TopLeft.z - gestureCuboid.BottomRight.z);
         }
 
+        /// <summary>
+        /// Normalize gesture co-ordinates to display on unity UI.
+        /// </summary>
+        /// <returns></returns>
         public bool NormalizeGesture()
         {
             SetBoundingBox();
@@ -209,7 +258,9 @@ namespace DataStructure
         }
         #endregion
 
-
+        /// <summary>
+        /// Transform handmodel's (gesture's) joints positions based on position factor.
+        /// </summary>
         public void TransformJoints()
         {
             // CHECK 1
@@ -228,6 +279,9 @@ namespace DataStructure
             }
         }
 
+        /// <summary>
+        /// Reset this gesture timeframe to starting point.
+        /// </summary>
         public void Reset()
         {
             _jointTransforms = HandModel.transform.Find("Joints").GetComponentsInChildren<Transform>();
@@ -280,6 +334,11 @@ namespace DataStructure
             }
         }
 
+        /// <summary>
+        /// Animate the gesture based on passed time value.
+        /// </summary>
+        /// <param name="max"></param>
+        /// <param name="current"></param>
         public void AnimateInSliderMode(float max, float current)
         {
             float totalTime = (HandPoses.Last().TimeStamp - HandPoses[0].TimeStamp) - HandPoses[0].TimeStamp;
@@ -301,6 +360,10 @@ namespace DataStructure
             }
         }
 
+        /// <summary>
+        /// Set previous and next frame in advance for gesture.
+        /// </summary>
+        /// <param name="time"></param>
         private void ConditionCheckForSliderMode(float time)
         {
             for (int i = 1; i < HandPoses.Count; i++)
@@ -314,6 +377,8 @@ namespace DataStructure
                 }
             }
         }
+
+        #region New Code - Not used
 
         #region Properties: bounding cuboid, production time, centroid posture, and centroid point
 
@@ -474,78 +539,7 @@ namespace DataStructure
             }
         }
 
+        #endregion 
         #endregion
     }
-
-    //public class Gesture
-    //{
-    //    private List<HandPose> _leftHandPoses;
-    //    public List<HandPose> LeftHandPoses
-    //    {
-    //        get
-    //        {
-    //            return _leftHandPoses;
-    //        }
-    //        set
-    //        {
-    //            if (value != null && value.Count > 0)
-    //                _leftHandPoses = value;
-    //            else
-    //                throw new ArgumentException("HandPoses cannot be null or empty!");
-    //        }
-    //    }
-
-    //    private List<HandPose> _rightHandPoses;
-    //    public List<HandPose> RightHandPoses
-    //    {
-    //        get
-    //        {
-    //            return _rightHandPoses;
-    //        }
-    //        set
-    //        {
-    //            if (value != null && value.Count > 0)
-    //                _rightHandPoses = value;
-    //            else
-    //                throw new ArgumentException("HandPoses cannot be null or empty!");
-    //        }
-    //    }
-
-    //    public HandTypeFormat DominateHandType { get; set; }
-
-    //    public Gesture()
-    //    {
-    //        _leftHandPoses = new List<HandPose>();
-    //        _rightHandPoses = new List<HandPose>();
-    //    }
-
-    //    public List<HandPose> GetDominateHand(bool emptyFiltered = true)
-    //    {
-    //        List<HandPose> dominate_hand = new List<HandPose>();
-    //        int maxCount = LeftHandPoses.Count > RightHandPoses.Count ? LeftHandPoses.Count : RightHandPoses.Count;
-    //        int leftBucket = 0;
-    //        int rightBucket = 0;
-    //        for (int i = 0; i < maxCount; i++)
-    //        {
-    //            if (LeftHandPoses.Count <= i)
-    //            {
-    //                rightBucket += (RightHandPoses.Count - i);
-    //                break;
-    //            }
-    //            if (RightHandPoses.Count <= i)
-    //            {
-    //                leftBucket += (LeftHandPoses.Count - i);
-    //                break;
-    //            }
-    //            if (LeftHandPoses[i].Joints.Length > RightHandPoses[i].Joints.Length)
-    //                leftBucket++;
-    //            else
-    //                rightBucket++;
-    //        }
-    //        dominate_hand = leftBucket > rightBucket ? LeftHandPoses : RightHandPoses;
-    //        if (emptyFiltered)
-    //            dominate_hand.RemoveAll(item => item.Joints.Length < 1);
-    //        return dominate_hand;
-    //    }
-    //}
 }

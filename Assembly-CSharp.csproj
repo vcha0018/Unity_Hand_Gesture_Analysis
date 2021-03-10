@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{F1586B6C-9162-F012-1DF2-0004110092B5}</ProjectGuid>
+    <ProjectGuid>{FB35C923-6142-C52E-F261-9D2D1EE61DDC}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp</AssemblyName>
@@ -74,8 +74,6 @@
     <Compile Include="Assets\Scripts\Extension.cs" />
     <Compile Include="Assets\Scripts\Gesture.cs" />
     <Compile Include="Assets\Scripts\GestureProcessor.cs" />
-    <Compile Include="Assets\Scripts\HandJointController.cs" />
-    <Compile Include="Assets\Scripts\HandModelController.cs" />
     <Compile Include="Assets\Scripts\HandPose.cs" />
     <Compile Include="Assets\Scripts\IO.cs" />
     <Compile Include="Assets\Scripts\Person.cs" />
@@ -632,31 +630,31 @@
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.4.15f1/Editor/Data/NetStandard/compat/2.0.0/shims/netfx/System.Xml.Serialization.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Timeline.Editor">
-      <HintPath>D:/Programming/Projects/Unity/AR_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
+      <HintPath>D:/Programming/Unity/Unity_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VSCode.Editor">
-      <HintPath>D:/Programming/Projects/Unity/AR_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
+      <HintPath>D:/Programming/Unity/Unity_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>D:/Programming/Projects/Unity/AR_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
+      <HintPath>D:/Programming/Unity/Unity_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>D:/Programming/Projects/Unity/AR_Hand_Gesture_Analysis/Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
+      <HintPath>D:/Programming/Unity/Unity_Hand_Gesture_Analysis/Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Timeline">
-      <HintPath>D:/Programming/Projects/Unity/AR_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
+      <HintPath>D:/Programming/Unity/Unity_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
     </Reference>
     <Reference Include="Unity.CollabProxy.Editor">
-      <HintPath>D:/Programming/Projects/Unity/AR_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
+      <HintPath>D:/Programming/Unity/Unity_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Rider.Editor">
-      <HintPath>D:/Programming/Projects/Unity/AR_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
+      <HintPath>D:/Programming/Unity/Unity_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>D:/Programming/Projects/Unity/AR_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
+      <HintPath>D:/Programming/Unity/Unity_Hand_Gesture_Analysis/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.UI">
-      <HintPath>D:/Programming/Projects/Unity/AR_Hand_Gesture_Analysis/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
+      <HintPath>D:/Programming/Unity/Unity_Hand_Gesture_Analysis/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup></ItemGroup>

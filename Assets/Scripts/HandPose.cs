@@ -1,8 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿/*
+Author:
+Vivekkumar Chaudhari (vcha0018@student.monash.edu) 
+    Student - Master of Information Technology
+    Monash University, Clayton, Australia
+
+Purpose:
+Developed under Summer Project 'AR Hand Gesture Capture and Analysis'
+
+Supervisors: 
+Barrett Ens (barrett.ens@monash.edu)
+    Monash University, Clayton, Australia
+ Max Cordeil (max.cordeil@monash.edu)
+    Monash University, Clayton, Australia
+
+About File:
+Data structure to store one Gesture frame with its joints.
+*/
+
+using System;
 using UnityEngine;
 
 namespace DataStructure
@@ -10,6 +25,9 @@ namespace DataStructure
     public class HandPose
     {
         private Vector3[] _joints;
+        /// <summary>
+        /// List of 21 3D hand joints at specific time.
+        /// </summary>
         public Vector3[] Joints
         {
             get
@@ -26,6 +44,9 @@ namespace DataStructure
         }
 
         private float _timestamp;
+        /// <summary>
+        /// Time frame number.
+        /// </summary>
         public float TimeStamp
         {
             get { return _timestamp; }
@@ -37,6 +58,10 @@ namespace DataStructure
             _timestamp = 0;
         }
 
+        /// <summary>
+        /// To get clone of this handpose object.
+        /// </summary>
+        /// <returns></returns>
         public HandPose GetClone()
         {
             return new HandPose() { Joints = (Vector3[])Joints.Clone(), TimeStamp = TimeStamp };

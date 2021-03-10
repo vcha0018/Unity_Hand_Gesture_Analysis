@@ -1,15 +1,37 @@
-﻿using System;
+﻿/*
+Author:
+Vivekkumar Chaudhari (vcha0018@student.monash.edu) 
+    Student - Master of Information Technology
+    Monash University, Clayton, Australia
+
+Purpose:
+Developed under Summer Project 'AR Hand Gesture Capture and Analysis'
+
+Supervisors: 
+Barrett Ens (barrett.ens@monash.edu)
+    Monash University, Clayton, Australia
+ Max Cordeil (max.cordeil@monash.edu)
+    Monash University, Clayton, Australia
+
+About File:
+Read gesture dataset from csv format to custom object type.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace DataStructure
 {
     public class IO
     {
+        /// <summary>
+        /// Load gestures dataset from directory and parse into Person object type.
+        /// </summary>
+        /// <param name="processBothHads">Specify to read both hand type or not.</param>
+        /// <returns></returns>
         public static List<Person> LoadGesturesPersonWise(bool processBothHads = false)
         {
             List<Person> person_gestures = new List<Person>();
@@ -50,6 +72,12 @@ namespace DataStructure
             return person_gestures;
         }
 
+        /// <summary>
+        /// To adding single hand to gesture dataset.
+        /// </summary>
+        /// <param name="gestures"></param>
+        /// <param name="fileInfo"></param>
+        /// <returns></returns>
         private static GestureTypeFormat AddSingleHand(ref Dictionary<GestureTypeFormat, List<Gesture>> gestures, ref FileInfo fileInfo)
         {
             string gkey = fileInfo.Name.Substring(fileInfo.Name.IndexOf("_") + 1, fileInfo.Name.IndexOf('#') - fileInfo.Name.IndexOf("_") - 1);
@@ -66,6 +94,13 @@ namespace DataStructure
             return ges_key;
         }
 
+        /// <summary>
+        /// To adding both hands to gesture dataset.
+        /// </summary>
+        /// <param name="gestures"></param>
+        /// <param name="f1"></param>
+        /// <param name="f2"></param>
+        /// <returns></returns>
         private static GestureTypeFormat AddBothHands(ref Dictionary<GestureTypeFormat, List<Gesture>> gestures, ref FileInfo f1, ref FileInfo f2)
         {
             string f1_gkey = f1.Name.Substring(f1.Name.IndexOf("_") + 1, f1.Name.IndexOf('#') - f1.Name.IndexOf("_") - 1);
@@ -104,6 +139,11 @@ namespace DataStructure
                 throw new Exception("Mismatch information found on gesture type while reading.");
         }
 
+        /// <summary>
+        /// Parse gesture file to list of handposes.
+        /// </summary>
+        /// <param name="text">csv text</param>
+        /// <returns></returns>
         private static List<HandPose> ParseHandText(string text)
         {
             List<HandPose> handPoses = new List<HandPose>();

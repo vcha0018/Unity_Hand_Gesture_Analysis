@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DataStructure
 {
+    /// <summary>
+    /// Boundung box of a gesture.
+    /// </summary>
     public class BoundingBox
     {
         public float maxX = float.NegativeInfinity;
@@ -17,6 +15,9 @@ namespace DataStructure
         public float minZ = float.PositiveInfinity;
     }
 
+    /// <summary>
+    /// Cuboid (center) of a gesture.
+    /// </summary>
     public class Cuboid
     {
         public Vector3 TopLeft;

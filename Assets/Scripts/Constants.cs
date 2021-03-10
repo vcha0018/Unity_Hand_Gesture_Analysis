@@ -1,11 +1,30 @@
-﻿using System;
+﻿/*
+Author:
+Vivekkumar Chaudhari (vcha0018@student.monash.edu) 
+    Student - Master of Information Technology
+    Monash University, Clayton, Australia
+
+Purpose:
+Developed under Summer Project 'AR Hand Gesture Capture and Analysis'
+
+Supervisors: 
+Barrett Ens (barrett.ens@monash.edu)
+    Monash University, Clayton, Australia
+ Max Cordeil (max.cordeil@monash.edu)
+    Monash University, Clayton, Australia
+
+About File:
+Application's static values.
+*/
+
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 public static class Constants
 {
+    /// <summary>
+    /// Define number of hand joints in CSV file.
+    /// It is always the same for all gestures all hand types.
+    /// </summary>
     public static int NUM_JOINTS = 21;
     public static List<string> GESTURE_DIR_PATHS = new List<string>()
     {
@@ -14,9 +33,15 @@ public static class Constants
         @"results\mediapipe\vivek3\",
         @"results\mediapipe\vivek4\"
     };
+    /// <summary>
+    /// Default frame rate, used to measure euclidean distance between gesture set.
+    /// </summary>
     public static int DEFAULT_FRAME_RATE = 25;
 }
 
+/// <summary>
+/// Available gesture types(actions).
+/// </summary>
 public enum GestureTypeFormat : ushort
 {
     None = 0,
@@ -35,12 +60,18 @@ public enum GestureTypeFormat : ushort
     SelectRange = 13,
 }
 
+/// <summary>
+/// Hand Types.
+/// </summary>
 public enum HandTypeFormat: ushort
 {
     LEFT = 0,
     RIGHT = 1
 }
 
+/// <summary>
+/// Available Dissimilarity functions.
+/// </summary>
 public enum DissimilarityFunctionType: ushort
 {
     EuclideanDistance = 1,
@@ -49,6 +80,9 @@ public enum DissimilarityFunctionType: ushort
     ModifiedHausdorff = 4
 }
 
+/// <summary>
+/// Available Aggregation functions.
+/// </summary>
 public enum AggregationType: ushort
 {
     Average = 1,
