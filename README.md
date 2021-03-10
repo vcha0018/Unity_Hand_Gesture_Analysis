@@ -1,8 +1,14 @@
 # Hand Gesture Analysis
 The main purpose of this application is to analyse captured gesture dataset and provide similarity measurement score for same type of gestures. <br>
 This application uses three types of dissimilarity function to compute dissimilarity matric. <br>
-  •	Euclidean Distance
-     o	It measures the distance between two vectors in the given space at the same time.
+<ul>
+  <li>
+    Euclidean Distance
+    <ul>
+      <li>
+        It measures the distance between two vectors in the given space at the same time.
+      </li>
+  </li>
   •	Dynamic Time Wrapping
      o	It measures dissimilarity or calculates the distance between the two-time series with different length.
   •	Modified Hausdorff
