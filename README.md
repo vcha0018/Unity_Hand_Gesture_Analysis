@@ -9,10 +9,23 @@ This application uses three types of dissimilarity function to compute dissimila
         It measures the distance between two vectors in the given space at the same time.
       </li>
   </li>
-  •	Dynamic Time Wrapping
-     o	It measures dissimilarity or calculates the distance between the two-time series with different length.
-  •	Modified Hausdorff
-     o	It measures distance between two matrices in terms of how far they are or how much closer.
+  <li>
+    Dynamic Time Wrapping
+    <ul>
+      <li>
+        It measures dissimilarity or calculates the distance between the two-time series with different length.
+      </li>
+    </ul>
+  </li>
+  <li>
+    Modified Hausdorff
+    <ul>
+       <li>
+        It measures distance between two matrices in terms of how far they are or how much closer.
+       </li>
+    <ul>
+  </li>
+</ul>
 <br>
 Dissimilarity matric further used to compute Consensus of the input gesture type. <br>
 The Consensus show which gesture pair is similar or gives similarity of various gesture type performed by different person after applying tolerance factor. <br>
