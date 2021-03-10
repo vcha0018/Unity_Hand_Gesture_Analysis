@@ -8,6 +8,7 @@ This application uses three types of dissimilarity function to compute dissimila
       <li>
         It measures the distance between two vectors in the given space at the same time.
       </li>
+    </ul>
   </li>
   <li>
     Dynamic Time Wrapping
@@ -23,7 +24,7 @@ This application uses three types of dissimilarity function to compute dissimila
        <li>
         It measures distance between two matrices in terms of how far they are or how much closer.
        </li>
-    <ul>
+    </ul>
   </li>
 </ul>
 <br>
