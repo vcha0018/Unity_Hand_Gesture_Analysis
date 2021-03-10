@@ -256,14 +256,15 @@ public class CanvasController : MonoBehaviour
 
     private void OnAnalyseButtonClick(UnityEngine.UI.Button button)
     {
-        string gestureType = gestureTypeDDL.options[gestureTypeDDL.value].text;
+        string gestureType = GetCurrentGesture();
         GestureTypeFormat gType = GestureTypeFormat.None;
         if (Enum.TryParse(gestureType.Trim().ToLower(), ignoreCase: true, out gType) && gType != GestureTypeFormat.None)
         {
             fromResult = GestureProcessor.Instance.GetConsensusOfPersons(
-                DissimilarityFunctionType.NormalizedDTW,
-                AggregationType.Average,
+                dissimilarityFunctionType: DissimilarityFunctionType.NormalizedDTW,
+                aggregationType: AggregationType.Average,
                 gestureType: gType,
+                handType: GetCurrentHandType(),
                 graphScale: 100
                 );
             double inputtolerancevalue = toleranceSwitch.isOn ? double.Parse(toleranceInput.text) : -1;

@@ -40,7 +40,7 @@ public class GestureProcessor
     /// <summary>
     /// Holds already performed analysis operation on gesture type.
     /// </summary>
-    private Dictionary<GestureTypeFormat, ComparisionResult> _resultSet;
+    private Dictionary<Tuple<GestureTypeFormat, HandTypeFormat>, ComparisionResult> _resultSet;
 
     /// <summary>
     /// Set true, if want to re-intialize this singleton class.
@@ -88,7 +88,7 @@ public class GestureProcessor
 
     private GestureProcessor()
     {
-        _resultSet = new Dictionary<GestureTypeFormat, ComparisionResult>();
+        _resultSet = new Dictionary<Tuple<GestureTypeFormat, HandTypeFormat>, ComparisionResult>();
         ReInitialize = false;
         GestureCollection = IO.LoadGesturesPersonWise();
         _gestureAnalysisCollection = (from item in GestureCollection select item.GetClone()).ToList();
@@ -120,6 +120,7 @@ public class GestureProcessor
     /// <param name="dissimilarityFunctionType">Specify which dissimilarity function want to use.</param>
     /// <param name="aggregationType">Specify which aggregation function want to use if one person has multiple data of same gesture type.</param>
     /// <param name="gestureType">Specify gesture type of person to compare.</param>
+    /// <param name="handType">Specify hand type to compare.</param>
     /// <param name="customTolerance">Specify custom tolerance value if want to get tolerance of it.</param>
     /// <param name="graphScale">Specify range of values to calculate tolerance from zero to maximum possible tolerance.</param>
     /// <returns></returns>
@@ -127,18 +128,20 @@ public class GestureProcessor
         DissimilarityFunctionType dissimilarityFunctionType,
         AggregationType aggregationType,
         GestureTypeFormat gestureType,
+        HandTypeFormat handType,
         double customTolerance = -1,
         int graphScale = -1)
     {
-        if (_resultSet.ContainsKey(gestureType))
-            return _resultSet[gestureType];
+        if (_resultSet.ContainsKey(new Tuple<GestureTypeFormat, HandTypeFormat>(gestureType, handType)))
+            return _resultSet[new Tuple<GestureTypeFormat, HandTypeFormat>(gestureType, handType)];
 
         Analyzer.aggregatorFunction = GetAggregatorType(aggregationType);
         Analyzer.dissimilarityFunction = GetDissimilarityFunctionFromType(dissimilarityFunctionType);
         Analyzer.normalizationFactor = Constants.NUM_JOINTS;
         var result = Analyzer.GetConsensusBetweenPersons(
-            ref _gestureAnalysisCollection,
-            gestureType,
+            persons: ref _gestureAnalysisCollection,
+            gestureType: gestureType,
+            handType: handType,
             toleranceDataPoints: graphScale,
             tolerance: (customTolerance > -1) ? Math.Round(customTolerance, 2) : -1).ElementAt(0);
 
@@ -154,6 +157,7 @@ public class GestureProcessor
     /// <param name="aggregationType">Specify which aggregation function want to use if one person has multiple data of same gesture type.</param>
     /// <param name="personName">Specify person name.</param>
     /// <param name="gestureType">Specify gesture type of person to compare.</param>
+    /// <param name="handType">Specify hand type to compare.</param>
     /// <param name="customTolerance">Specify custom tolerance value if want to get tolerance of it.</param>
     /// <returns></returns>
     public ComparisionResult GetConsensusOfPerson(
@@ -161,10 +165,11 @@ public class GestureProcessor
         AggregationType aggregationType,
         string personName,
         GestureTypeFormat gestureType,
+        HandTypeFormat handType,
         double customTolerance = -1)
     {
-        if (_resultSet.ContainsKey(gestureType))
-            return _resultSet[gestureType];
+        if (_resultSet.ContainsKey(new Tuple<GestureTypeFormat, HandTypeFormat>(gestureType, handType)))
+            return _resultSet[new Tuple<GestureTypeFormat, HandTypeFormat>(gestureType, handType)];
 
         Analyzer.aggregatorFunction = GetAggregatorType(aggregationType);
         Analyzer.dissimilarityFunction = GetDissimilarityFunctionFromType(dissimilarityFunctionType);
@@ -173,8 +178,9 @@ public class GestureProcessor
         if (person == null)
             throw new Exception("Cannot locate person from given person name!");
         var result = Analyzer.GetConsensusBetweenGestures(
-            person,
-            gestureType,
+            person: person,
+            gestureType: gestureType,
+            handType: handType,
             toleranceDataPoints: 50,
             tolerance: (customTolerance > -1) ? customTolerance : -1).ElementAt(0);
 

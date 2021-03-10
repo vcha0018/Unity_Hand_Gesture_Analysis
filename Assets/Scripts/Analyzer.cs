@@ -113,14 +113,14 @@ namespace Analysis
         /// <param name="toleranceDataPoints">To retrive list of consensus-tolerance pair with data points.</param>
         /// <param name="tolerance">Find only one consensus for custom tolerance if any.</param>
         /// <returns></returns>
-        internal static Dictionary<GestureTypeFormat, ComparisionResult> GetConsensusBetweenPersons(
+        internal static Dictionary<Tuple<GestureTypeFormat, HandTypeFormat>, ComparisionResult> GetConsensusBetweenPersons(
             ref List<Person> persons,
             GestureTypeFormat gestureType = GestureTypeFormat.None,
             HandTypeFormat handType = HandTypeFormat.LEFT,
             int toleranceDataPoints = -1,
             double tolerance = -1)
         {
-            Dictionary<GestureTypeFormat, ComparisionResult> result = new Dictionary<GestureTypeFormat, ComparisionResult>();
+            Dictionary<Tuple<GestureTypeFormat, HandTypeFormat>, ComparisionResult> result = new Dictionary<Tuple<GestureTypeFormat, HandTypeFormat>, ComparisionResult>();
             // list of all gesture types
             List<GestureTypeFormat> GESTURE_TYPES = (gestureType != GestureTypeFormat.None)
                 ? new List<GestureTypeFormat>() { gestureType }
@@ -136,7 +136,7 @@ namespace Analysis
             {
                 double[,] disMatric = GetDissimilarityMatric(persons, gType, handType);
                 result.Add(
-                    gType,
+                    new Tuple<GestureTypeFormat, HandTypeFormat>(gType, handType),
                     new ComparisionResult()
                     {
                         dissimilarityMatric = disMatric,
@@ -155,7 +155,7 @@ namespace Analysis
         /// <param name="toleranceDataPoints">To retrive list of consensus-tolerance pair with data points.</param>
         /// <param name="tolerance">Find only one consensus for custom tolerance if any.</param>
         /// <returns></returns>
-        internal static Dictionary<GestureTypeFormat, ComparisionResult> GetConsensusBetweenGestures(
+        internal static Dictionary<Tuple<GestureTypeFormat, HandTypeFormat>, ComparisionResult> GetConsensusBetweenGestures(
             Person person,
             GestureTypeFormat gestureType = GestureTypeFormat.None,
             HandTypeFormat handType = HandTypeFormat.LEFT,
