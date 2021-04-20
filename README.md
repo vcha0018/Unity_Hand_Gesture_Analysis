@@ -37,10 +37,10 @@ vcha0018@student.monash.edu <br>
 Monash University, Clayton, Australia.
 
 ### Supervisors
-Barrett Ens <br>
+<a href="https://research.monash.edu/en/persons/barrett-ens">Barrett Ens</a> <br>
 barrett.ens@monash.edu <br>
 Monash University, Clayton, Australia. <br>
 
-Max Cordeil <br>
+<a href="https://research.monash.edu/en/persons/max-cordeil">Max Cordeil</a> <br>
 max.cordeil@monash.edu <br>
 Monash University, Clayton, Australia. <br>
